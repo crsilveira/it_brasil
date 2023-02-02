@@ -2,3 +2,7 @@ id,name,model_id/id,group_id/id,perm_read,perm_write,perm_create,perm_unlink
 access_purchase_import_invoice,access.purchase.import.invoice,model_purchase_order_wizard,,1,1,1,1
 access_wizard_import_nfe,access_wizard_import_nfe,model_wizard_import_nfe,account.group_account_invoice,1,1,1,0
 access_declaration_line,access_declaration_line,model_declaration_line,account.group_account_invoice,1,1,1,1
+access_declaration_line_purchase,access_declaration_line_purchase,model_declaration_line,purchase.group_purchase_user,1,0,0,0
+access_declaration_line_sales,access_declaration_line_sales,model_declaration_line,sales_team.group_sale_salesman,1,0,0,0
+access_nfe_40_ii,nfe_40_ii,l10n_br_nfe_spec.model_nfe_40_ii,l10n_br_nfe.group_manager,1,1,1,1
+access_nfe_40_ii_user,nfe_40_ii,l10n_br_nfe_spec.model_nfe_40_ii,l10n_br_nfe.group_user,1,0,0,0

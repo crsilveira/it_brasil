@@ -1,5 +1,5 @@
 # generated from manifests external_dependencies
-erpbrasil.assinatura
+erpbrasil.assinatura==1.4.0
 erpbrasil.base
 erpbrasil.edoc
 erpbrasil.transmissao
@@ -11,6 +11,8 @@ pyOpenSSL
 workalendar
 xmldiff
 lxml==4.6.5
+phonenumbers
+email_validator
 git+https://github.com/it-brasil/PyTrustNFe.git@itbrasil#egg=pytrustnfe3
 git+https://github.com/it-brasil/erpbrasil.edoc.pdf.git@itbrasil#egg=erpbrasil.edoc.pdf
 # git+https://github.com/it-brasil/erpbrasil.edoc.git@temp-nfe-ms#egg=erpbrasil.edoc

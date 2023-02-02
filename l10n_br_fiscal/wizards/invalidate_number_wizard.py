@@ -3,6 +3,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import models
+from odoo.exceptions import UserError
 
 
 class InvalidateNumberWizard(models.TransientModel):
@@ -11,6 +12,10 @@ class InvalidateNumberWizard(models.TransientModel):
     _inherit = "l10n_br_fiscal.base.wizard.mixin"
 
     def do_invalidate(self):
+        if not self.justification:
+            raise UserError("Justificativa é obrigatória!")
+        if len(self.justification) < 15:
+            raise UserError("Justificativa deve ter no mínimo 15 caracteres!")
         invalidate = self.env["l10n_br_fiscal.invalidate.number"].create(
             {
                 "company_id": self.document_id.company_id.id,

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_ipi">
+        <t t-call="web.html_container">
+            <!-- <t t-foreach="docs" t-as="o"> -->
+            <div class="page">
+                <t t-set="saldo_entrada" t-value="0.0" />
+                <t t-set="saldo_saida" t-value="0.0" />
+                <t t-set="base_entrada" t-value="0.0" />
+                <t t-set="base_saida" t-value="0.0" />
+                <t t-set="total_entrada" t-value="0.0" />
+                <t t-set="total_saida" t-value="0.0" />
+                <div style="page-break-after: always;"/>
+                <div class="row text-center">
+                        <div class="o_offer col-lg-12">
+                                Relatório IPI
+                                <t t-esc="form_data['company_id'][1]"/>
+                        </div>
+                <table class="table table-bordered mt32" style="border: 2px solid black;" width="95%">
+                <!-- <table class="table table-sm o_main_table"> -->
+                    <thead style="display: table-row-group">
+                        <tr>
+                            <th name="th_date" class="text-center">
+                                <span>Data</span>
+                            </th>
+                            <th name="th_serie" class="text-center">
+                                <span>Serie</span>
+                            </th>
+                            <th name="th_number" class="text-center">
+                                <span>Numero NF</span>
+                            </th>
+                            <th name="th_status" class="text-center">
+                                <span>Situação</span>
+                            </th>
+                            <th name="th_operation" class="text-center">
+                                <span>Operação</span>
+                            </th>
+                            <th name="th_cfop" class="text-center">
+                                <span>CFOP</span>
+                            </th>
+                            <th name="th_total" class="text-center">
+                                <span>Total</span>
+                            </th>
+                            <th name="th_ipibase" class="text-center">
+                                <span>IPI Base</span>
+                            </th>
+                            <th name="th_ipipercent" class="text-center">
+                                <span>%</span>
+                            </th>
+                            <th name="th_ipivalue" class="text-center">
+                                <span>IPI Valor</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="taxes" t-as="line">
+                            <t t-if="line['ipi_value'] &lt; 0">
+                                <t t-set="saldo_entrada" t-value="saldo_entrada + line['ipi_value']"/>
+                            </t>
+                            <t t-if="line['ipi_value'] &gt; 0">
+                                <t t-set="saldo_saida" t-value="saldo_saida + line['ipi_value']"/>
+                            </t>
+                            <t t-if="line['ipi_base'] &lt; 0">
+                                <t t-set="base_entrada" t-value="base_entrada + line['ipi_base']"/>
+                            </t>
+                            <t t-if="line['ipi_base'] &gt; 0">
+                                <t t-set="base_saida" t-value="base_saida + line['ipi_base']"/>
+                            </t>
+                            <t t-if="line['amount_total'] &lt; 0">
+                                <t t-set="total_entrada" t-value="total_entrada + line['amount_total']"/>
+                            </t>
+                            <t t-if="line['amount_total'] &gt; 0">
+                                <t t-set="total_saida" t-value="total_saida + line['amount_total']"/>
+                            </t>
+                            <tr style="border: 1px solid black;">
+                                <td><span t-esc="line['document_date']" t-options='{"widget": "date","format": "dd-MM-yyyy"}'/></td>
+                                <td><span t-esc="line['document_serie']"/></td>
+                                <td><span t-esc="line['document_number']"/></td>
+                                <td><span t-esc="line['status_name']"/></td>
+                                <td><span t-esc="line['operation_name']"/></td>
+                                <td><span t-esc="line['cfop']"/></td>
+                                <td class="col-xs-1" style="text-align:right;border:none;width:10%">
+                                    <span t-esc="line['amount_total']" t-options='{"widget": "float", "precision": 2}' />
+                                </td>
+                                <td class="col-xs-1" style="text-align:right;border:none;width:10%">
+                                    <span t-esc="line['ipi_base']" t-options='{"widget": "float", "precision": 2}'/>
+                                </td>
+                                <td class="col-xs-1" style="text-align:right;border:none;width:4%">
+                                    <span t-esc="line['ipi_percent']" t-options='{"widget": "float", "precision": 1}'/>
+                                </td>
+                                <td class="col-xs-1" style="text-align:right;border:none;width:12%">
+                                    <span t-esc="line['ipi_value']" t-options='{"widget": "float", "precision": 2}'/>
+                                </td>
+                                <!-- <td><span t-esc="line['amount_pis_base']"/></td> -->
+                                <!-- <td><span t-esc="line['amount_cofins_base']"/></td> -->
+                                <!-- <td><span t-esc="line['icms_base']"/></td>
+                                <td><span t-esc="line['icms_percent']"/></td>
+                                <td><span t-esc="line['icms_value']"/></td>
+                                <td><span t-esc="line['ipi_base']"/></td> -->
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+                <t t-set="total_geral" t-value="0.0" />
+                <t t-set="total_base" t-value="0.0" />
+                <t t-set="total_ipi" t-value="0.0" />
+                <br />
+                    <h3>Resumo por CFOP</h3>
+                <table class="table table-bordered mt32" width="70%" style="border: 2px solid black;">
+                    <thead>
+                        <tr>
+                            <th  class="col-xs-1" style="text-align:left;border:none;width:25%">
+                                <span>CFOP</span>
+                            </th>
+                            <th class="col-xs-1" style="text-align:right;border:none;width:25%">
+                                <span>Total</span>
+                            </th>
+                            <th class="col-xs-1" style="text-align:right;border:none;width:25%">
+                                <span>IPI Base</span>
+                            </th>
+                            <th class="col-xs-1" style="text-align:right;border:none;width:25%">
+                                <span>IPI Total</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="cfop" t-as="line">
+                            <t t-set="total_geral" t-value="total_geral + line['amount_total']"/>
+                            <t t-set="total_base" t-value="total_base + line['ipi_base']" />
+                            <t t-set="total_ipi" t-value="total_ipi + line['ipi_value']" />            
+                            <tr>
+                                <td class="col-xs-1" style="text-align:left;border:none;width:25%"><span t-esc="line['cfop']" /></td>
+                                <td class="col-xs-1" style="text-align:right;border:none;width:25%"><span t-esc="line['amount_total']" t-options='{"widget": "float", "precision": 2}'/></td>
+                                <td class="col-xs-1" style="text-align:right;border:none;width:25%"><span t-esc="line['ipi_base']" t-options='{"widget": "float", "precision": 2}'/></td>
+                                <td class="col-xs-1" style="text-align:right;border:none;width:25%"><span t-esc="line['ipi_value']" t-options='{"widget": "float", "precision": 2}'/></td>
+                            </tr>
+                        </t>
+                        <tr style="border:1;border-top:0;">
+                            <td class="col-xs-1" style="text-align:left;border:none;width:25%"><strong>Total Saida:</strong></td>
+                            <td class="col-xs-1" style="text-align:right;border:none;width:25%"><strong><span t-esc="total_saida" t-options='{"widget": "float", "precision": 2}'/></strong></td>
+                            <td class="col-xs-1" style="text-align:right;border:none;width:25%"><strong><span t-esc="base_saida" t-options='{"widget": "float", "precision": 2}'/></strong></td>
+                            <td class="col-xs-1" style="text-align:right;border:none;width:25%"><strong><span t-esc="saldo_saida" t-options='{"widget": "float", "precision": 2}'/></strong></td>
+                        </tr>
+                        <tr style="border:1;border-top:0;">
+                            <td class="col-xs-1" style="text-align:left;border:none;width:25%"><strong>Total Entrada:</strong></td>
+                            <td class="col-xs-1" style="text-align:right;border:none;width:25%"><strong><span t-esc="total_entrada" t-options='{"widget": "float", "precision": 2}'/></strong></td>
+                            <td class="col-xs-1" style="text-align:right;border:none;width:25%"><strong><span t-esc="base_entrada" t-options='{"widget": "float", "precision": 2}'/></strong></td>
+                            <td class="col-xs-1" style="text-align:right;border:none;width:25%"><strong><span t-esc="saldo_entrada" t-options='{"widget": "float", "precision": 2}'/></strong></td>
+                        </tr>
+                        <tr style="border:1;border-top:0;">
+                            <td class="col-xs-1" style="text-align:left;border:none;width:25%"><strong>Saldo:</strong></td>
+                            <td class="col-xs-1" style="text-align:right;border:none;width:25%"><strong><span t-esc="total_geral" t-options='{"widget": "float", "precision": 2}'/></strong></td>
+                            <td class="col-xs-1" style="text-align:right;border:none;width:25%"><strong><span t-esc="total_base" t-options='{"widget": "float", "precision": 2}'/></strong></td>
+                            <td class="col-xs-1" style="text-align:right;border:none;width:25%"><strong><span t-esc="total_ipi" t-options='{"widget": "float", "precision": 2}'/></strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            </div>
+        </t>
+    </template>
+</odoo>

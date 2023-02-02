@@ -25,6 +25,20 @@ class AccountJournal(models.Model):
         default=False,
     )
 
+    use_plugboleto = fields.Boolean(
+        string="Use Plugboleto"
+    )
+
+    cnpj_holder = fields.Char(
+        related='bank_account_id.cnpj_holder',
+        store=True
+    )
+
+    plugboleto_holder_token = fields.Char(
+        related='bank_account_id.plugboleto_holder_token',
+        store=True
+    )
+
     def multi_move_import(self, file_stream, ftype="csv"):
         """Create multiple bank statements from values given by the parser for
         the given profile.

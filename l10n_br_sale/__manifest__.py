@@ -7,7 +7,7 @@
     "license": "AGPL-3",
     "author": "Akretion, " "Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/l10n-brazil",
-    "version": "14.0.1.0.1",
+    "version": "14.0.1.1.1",
     "depends": ["sale_management", "l10n_br_account"],
     "data": [
         # Data
@@ -31,7 +31,7 @@
         "demo/l10n_br_sale.xml",
     ],
     "installable": True,
-    "auto_install": True,
+    "auto_install": False,
     "post_init_hook": "post_init_hook",
     "development_status": "Production/Stable",
     "maintainers": ["renatonlima"],

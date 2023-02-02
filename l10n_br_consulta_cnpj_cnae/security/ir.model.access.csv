@@ -3,6 +3,7 @@
 "security_consulta_cnpj_ie","base.group_partner_manager","True","True","","l10n_br_base.model_state_tax_numbers","State Tax Numbers for Consulta CNPJ","True","True"
 "security_consulta_cnpj_cnae","base.group_user","True","True","","model_cnae_cnpj","CNAE for Consulta CNPJ","True","True"
 "security_consulta_cnpj_cnae_sec","base.group_user","True","True","True","model_cnae_cnpj_sec","CNAE for Consulta CNPJ","True","True"
+"security_cnpj_socios","base.group_user","True","True","True","model_cnpj_socios","Quadro Societario","True","True"
 
 
 

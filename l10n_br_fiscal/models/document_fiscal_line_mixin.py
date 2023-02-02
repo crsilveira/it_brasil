@@ -163,7 +163,7 @@ class FiscalDocumentLineMixin(models.AbstractModel):
         string="CFOP Destination",
     )
 
-    fiscal_price = fields.Float(string="Fiscal Price", digits="Product Price")
+    fiscal_price = fields.Float(string="Fiscal Price", digits="Fiscal Price")
 
     uot_id = fields.Many2one(comodel_name="uom.uom", string="Tax UoM")
 

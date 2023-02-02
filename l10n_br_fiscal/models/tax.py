@@ -50,6 +50,7 @@ TAX_DICT_VALUES = {
     "add_to_base": 0.00,
     "remove_from_base": 0.00,
     "compute_reduction": True,
+    "compute_with_tax_value": False,
 }
 
 
@@ -239,17 +240,10 @@ class Tax(models.Model):
                 base_amount * (1 + (tax_dict["icmsst_mva_percent"] / 100))
             )
         # Compute Base II
-        if (
-            cfop
-            and cfop.destination == CFOP_DESTINATION_EXPORT
-            and fiscal_operation_type == FISCAL_IN
-            and tax_dict["tax_domain"] == "icms"
-        ):
-            icms_perc = tax_dict.get("percent_amount")
-            if icms_perc:
-                icms_base = base_amount
-                icms_perc_ii = 1 - (icms_perc / 100)
-                base_amount = round_currency(icms_base / icms_perc_ii)
+        if tax_dict.get("compute_with_tax_value"):
+            base_amount = round_currency(
+                base_amount / (1 - (tax_dict["percent_amount"] / 100))
+            )
 
         if (
             not tax.percent_amount
@@ -300,8 +294,8 @@ class Tax(models.Model):
                 and tax_dict["tax_domain"] in ("pis", "cofins")
             ):
                 # Get Computed ICMS Tax
-               tax_dict_icms = taxes_dict.get("icms", {})
-               tax_dict["remove_from_base"] += tax_dict_icms.get("tax_value", 0.00)
+                tax_dict_icms = taxes_dict.get("icms", {})
+                tax_dict["remove_from_base"] += tax_dict_icms.get("tax_value", 0.00)
 
         # TODO futuramente levar em consideração outros tipos de base de calculo
         if float_is_zero(tax_dict.get("base", 0.00), currency.decimal_places):
@@ -386,7 +380,6 @@ class Tax(models.Model):
             # Add IPI in ICMS Base
             tax_dict["add_to_base"] += tax_dict_ipi.get("tax_value", 0.00)
 
-        tax_dict.update(self._compute_tax(tax, taxes_dict, **kwargs))
         # Adiciona na base de calculo do ICMS nos casos de entrada de importação
         if (
             cfop
@@ -405,6 +398,11 @@ class Tax(models.Model):
 
             tax_dict["add_to_base"] += kwargs.get("ii_customhouse_charges", 0.00)
 
+            # Comentei aqui pq o other_value deve entrar na BASE
+            # other_value = kwargs.get("other_value", 0.00)
+            # tax_dict["remove_from_base"] += sum([other_value])
+            tax_dict["compute_with_tax_value"] = True
+
             # Difal - Base
             
             # difal_icms_base = 0.00
@@ -417,6 +415,7 @@ class Tax(models.Model):
 
             # tax_dict = self._compute_tax(tax, taxes_dict, **kwargs)
 
+        tax_dict.update(self._compute_tax(tax, taxes_dict, **kwargs))
         # tax_dict.update({"icms_base_type": tax.icms_base_type})
 
         # DIFAL
@@ -684,6 +683,28 @@ class Tax(models.Model):
     def _compute_generic(self, tax, taxes_dict, **kwargs):
         return self._compute_tax(tax, taxes_dict, **kwargs)
 
+    def _compute_tax_sequence(self, taxes_dict, **kwargs):
+        """Método para calcular a ordem que os impostos serão calculados.
+        Por padrão é utilizado o campo compute_sequence do objeto para
+        ordenar a sequencia que os impostos serão calculados.
+        Por padrão é obdecida a seguinte sequencia:
+            compute_sequence = {
+                tax_domain: compute_sequence,
+            }
+        """
+        # Pega por padrão os valores do campo compute_sequence
+        compute_sequence = dict([(t.tax_domain, t.compute_sequence) for t in self])
+
+        # Caso seja uma nota de entrada de importação é alterado a sequencia
+        cfop = kwargs.get("cfop")
+        operation_line = kwargs.get("operation_line")
+        if cfop and operation_line:
+            fiscal_operation_type = operation_line.fiscal_operation_type or FISCAL_OUT
+            if cfop.destination == CFOP_DESTINATION_EXPORT and fiscal_operation_type == FISCAL_IN:
+                compute_sequence.update(icms=50)
+
+        return compute_sequence
+
     def compute_taxes(self, **kwargs):
         """
         arguments:
@@ -728,7 +749,8 @@ class Tax(models.Model):
         }
         taxes = {}
 
-        for tax in self.sorted(key=lambda t: t.compute_sequence):
+        sequence = self._compute_tax_sequence(taxes, **kwargs)
+        for tax in self.sorted(key=lambda t: sequence.get(t.tax_domain)):
             taxes[tax.tax_domain] = dict(TAX_DICT_VALUES)
             try:
                 # Define CST FROM TAX

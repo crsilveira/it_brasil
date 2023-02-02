@@ -7,7 +7,7 @@ import logging
 import os
 
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError,ValidationError
 
 from ..constants.fiscal import EVENT_ENVIRONMENT
 from ..tools.misc import build_edoc_path
@@ -324,14 +324,22 @@ class Event(models.Model):
         self, status_code, response, protocol_date, protocol_number, file_response_xml
     ):
         self._save_event_file(file_response_xml, "xml", authorization=True)
-        self.write(
-            {
-                "state": "done",
+        if status_code not in ["100", "102", "135", "150"]:
+            self.write({
+                "state": "draft",
                 "status_code": status_code,
                 "response": response,
-                "protocol_date": protocol_date,
-                "protocol_number": protocol_number,
-            }
+            })
+            raise ValidationError(("%s - %s") % (status_code, response))
+        else:
+            self.write(
+                {
+                    "state": "done",
+                    "status_code": status_code,
+                    "response": response,
+                    "protocol_date": protocol_date,
+                    "protocol_number": protocol_number,
+                }
         )
 
     def create_event_save_xml(

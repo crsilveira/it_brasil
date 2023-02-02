@@ -98,7 +98,7 @@ class ProductTemplate(models.Model):
 
     uot_id = fields.Many2one(comodel_name="uom.uom", string="Tax UoM")
 
-    uot_factor = fields.Float(string="Tax UoM Factor")
+    uot_factor = fields.Float(string="Tax UoM Factor", digits="Fiscal Unit")
 
     tax_definition_ids = fields.Many2many(
         comodel_name="l10n_br_fiscal.tax.definition",

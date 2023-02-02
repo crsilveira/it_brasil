@@ -7,8 +7,14 @@ from lxml import etree
 
 from odoo import api, models
 
+from ..constants.fiscal import CFOP_DESTINATION_EXPORT, FISCAL_IN
 from ..constants.icms import ICMS_BASE_TYPE_DEFAULT, ICMS_ST_BASE_TYPE_DEFAULT
 from .tax import TAX_DICT_VALUES
+
+from ..constants.fiscal import (
+    CFOP_DESTINATION_EXPORT,
+    FISCAL_IN
+)
 
 from ..constants.fiscal import (
     CFOP_DESTINATION_EXPORT,
@@ -159,17 +165,6 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             rm_to_amount = sum([record[r] for r in record._rm_fields_to_amount()])
 
             # Valor do documento (NF)
-
-            if (
-                record.cfop_id
-                and record.cfop_id.destination == CFOP_DESTINATION_EXPORT
-                and record.fiscal_operation_id.fiscal_operation_type == FISCAL_IN
-            ):
-                # record.amount_total = (
-                #     record.amount_untaxed + record.amount_tax + add_to_amount - rm_to_amount + record.icms_value
-                # )
-                record.amount_tax = record.icms_value
-
             record.amount_total = (
                 record.amount_untaxed + record.amount_tax + add_to_amount - rm_to_amount
             )
@@ -206,6 +201,8 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             uot_id=self.uot_id,
             discount_value=self.discount_value,
             insurance_value=self.insurance_value,
+            ii_customhouse_charges=self.ii_customhouse_charges,
+            ii_iof_value=self.ii_iof_value,
             other_value=self.other_value,
             freight_value=self.freight_value,
             ncm=self.ncm_id,
@@ -521,6 +518,15 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
             self.icms_percent = tax_dict.get("percent_amount")
             self.icms_reduction = tax_dict.get("percent_reduction")
             self.icms_value = tax_dict.get("tax_value")
+            if self.cfop_id.code in ('6109', '6110'):
+                desonera_icms = 1 - (self.icms_reduction/100)
+                desonera_base = round((self.icms_base / desonera_icms), 2)
+                self.icms_relief_value = (desonera_base * (self.icms_percent/100)) - self.icms_value
+                relief = "9" 
+                if self.icms_cst_id.code == "40":
+                    relief = "7"
+                relief_id = self.env['l10n_br_fiscal.icms.relief'].search([('code', '=', relief)])
+                self.icms_relief_id = relief_id.id
 
             # Carlos : da erro ao Criar uma fatura na Venda sem este IF
             if tax_dict.get("icms_dest_base"):
@@ -823,7 +829,15 @@ class FiscalDocumentLineMixinMethods(models.AbstractModel):
 
     @api.model
     def _add_fields_to_amount(self):
-        return ["insurance_value", "other_value", "freight_value"]
+        fields_to_amount = ["insurance_value", "other_value", "freight_value"]
+        if (
+            self.cfop_id.destination == CFOP_DESTINATION_EXPORT
+            and self.fiscal_operation_id.fiscal_operation_type == FISCAL_IN
+        ):
+            fields_to_amount.append("pis_value")
+            fields_to_amount.append("cofins_value")
+            fields_to_amount.append("icms_value")
+        return fields_to_amount
 
     @api.model
     def _rm_fields_to_amount(self):

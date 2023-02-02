@@ -3,6 +3,7 @@
 # License AGPL-3 - See http://www.gnu.org/licenses/agpl-3.0.html
 
 from ast import literal_eval
+import logging
 
 from erpbrasil.base.fiscal.edoc import ChaveEdoc
 
@@ -25,7 +26,7 @@ from ..constants.fiscal import (
     SITUACAO_EDOC_DENEGADA,
     SITUACAO_EDOC_INUTILIZADA,
 )
-
+_logger = logging.getLogger(__name__)
 
 class Document(models.Model):
     """Implementação base dos documentos fiscais
@@ -53,6 +54,7 @@ class Document(models.Model):
         "l10n_br_fiscal.document.invoice.mixin",
     ]
     _description = "Fiscal Document"
+    _check_company_auto = True
 
     # used mostly to enable _inherits of account.invoice on
     # fiscal_document when existing invoices have no fiscal document.
@@ -123,7 +125,7 @@ class Document(models.Model):
     )
 
     date_in_out = fields.Datetime(
-        string="Date Move",
+        string="Date IN/OUT",
         copy=False,
     )
 
@@ -163,6 +165,8 @@ class Document(models.Model):
         inverse_name="document_id",
         string="Document Lines",
         copy=True,
+        limit=100,
+        check_company=True,
     )
 
     edoc_purpose = fields.Selection(
@@ -365,7 +369,7 @@ class Document(models.Model):
         "fiscal_line_ids.amount_tax_withholding",
     )
     def _compute_amount(self):
-        super()._compute_amount()
+        return super()._compute_amount()
 
     @api.model
     def create(self, values):
@@ -457,20 +461,26 @@ class Document(models.Model):
             order="state_edoc, document_type_id",
         ).mapped("email_template_id")
 
+
     def send_email(self, state):
         self.ensure_one()
         email_template = self._get_email_template(state)
         if email_template:
-            email_template.send_mail(self.id)
+             
+            email_template.with_context(
+                default_attachment_ids=self._get_mail_attachment()
+            ).send_mail(self.id)
+             
 
     def _after_change_state(self, old_state, new_state):
         self.ensure_one()
-        super()._after_change_state(old_state, new_state)
+        result = super()._after_change_state(old_state, new_state)
         self.send_email(new_state)
+        return result
 
     @api.onchange("fiscal_operation_id")
     def _onchange_fiscal_operation_id(self):
-        super()._onchange_fiscal_operation_id()
+        result = super()._onchange_fiscal_operation_id()
         if self.fiscal_operation_id:
             self.fiscal_operation_type = self.fiscal_operation_id.fiscal_operation_type
             self.edoc_purpose = self.fiscal_operation_id.edoc_purpose
@@ -494,6 +504,7 @@ class Document(models.Model):
                 )
             )
         self.document_subsequent_ids = subsequent_documents
+        return result
 
     @api.onchange("document_type_id")
     def _onchange_document_type_id(self):
@@ -555,12 +566,31 @@ class Document(models.Model):
                 "associated documents have already been authorized."
             )
             raise UserWarning(message)
+    # 
+    def _get_mail_attachment(self):
+        self.ensure_one()
+        attachment_ids = []
+        if self.state_edoc == SITUACAO_EDOC_AUTORIZADA:
+            if self.file_report_id:
+                attachment_ids.append(self.file_report_id.id)
+            if self.authorization_file_id:
+                attachment_ids.append(self.authorization_file_id.id)
+        return attachment_ids
+    # 
 
     def action_send_email(self):
         """Open a window to compose an email, with the fiscal document_type
         template message loaded by default
         """
+
         self.ensure_one()
+        #attachment pdf and xml from attachment table
+        attachment_ids = self.env["ir.attachment"].search([("res_id", "=", self.id), ("res_model", "=", "l10n_br_fiscal.document")]) 
+        #attachment xml from event model
+        #search xml file attachment by document_key + xml extension 
+        attachment_ids += self.env["ir.attachment"].search([("name", "=", "NFe" + self.document_key + "-env.xml")])
+
+     
         template = self._get_email_template(self.state)
         compose_form = self.env.ref("mail.email_compose_message_wizard_form", False)
         lang = self.env.context.get("lang")
@@ -571,6 +601,7 @@ class Document(models.Model):
             default_model="l10n_br_fiscal.document",
             default_res_id=self.id,
             default_use_template=bool(template),
+            default_attachment_ids=self._get_mail_attachment(), 
             default_template_id=template and template.id or False,
             default_composition_mode="comment",
             model_description=self.document_type_id.name or self._name,

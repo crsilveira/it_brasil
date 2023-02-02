@@ -95,9 +95,10 @@
                     name="document_type_id"
                     attrs="{'invisible': [('create_date', '!=', False), ('document_type_id', '=', False)], 'readonly': [('state', '!=', 'draft')]}"
                 />
+                <field name="fiscal_operation_type" attrs="{'invisible': ['|', ('document_type_id', '=', False), ('move_type', '!=', 'entry')], 'readonly': [('state', '!=', 'draft')]}" />
                 <field
                     name="fiscal_operation_id"
-                    attrs="{'invisible': [('document_type_id', '=', False)], 'required': [('document_type_id', '!=', False)], 'readonly': [('state', '!=', 'draft')]}"
+                    attrs="{'invisible': [('document_type_id', '=', False)], 'required': [('document_type_id', '!=', False), ('move_type', '!=', 'entry')], 'readonly': [('state', '!=', 'draft')]}"
                 />
                 <field
                     name="issuer"
@@ -176,6 +177,8 @@
                     options="{'no_create': True}"
                 />
                 <field name="icms_value" optional="hide" />
+                <field name="icms_relief_id" optional="hide" />
+                <field name="icms_relief_value" optional="hide" />
                 <field name="ipi_value" optional="hide" />
                 <field name="pis_value" optional="hide" />
                 <field name="cofins_value" optional="hide" />

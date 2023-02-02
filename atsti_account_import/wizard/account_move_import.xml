@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="account_move_import_wizard_form" model="ir.ui.view">
+        <field name="name">account.move.import.wizard.form</field>
+        <field name="model">account.move.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Import Journal Entries">
+                <field name="company_id" invisible="1"/>
+                <field name="journal_id" />
+                <field name="name" />
+                <field name="row_initial" />
+                <field name="row_end" />
+                <field name="input_file" filename="input_file_name" />
+                <field name="input_file_name" invisible="1" />
+                <footer>
+                    <button name="action_account_move_import" string="Import Journal Entries" class="oe_highlight" type="object" />
+                    <button string="Cancel" class="btn btn-secondary" special="cancel" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="account_move_import_wizard_tree" model="ir.ui.view">
+        <field name="name">account.move.import.wizard.tree</field>
+        <field name="model">account.move.import.wizard</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name" />
+                <field name="row_initial" />
+                <field name="row_end" />
+                <field name="journal_id" />
+                <field name="input_file" filename="input_file_name" />
+                <field name="input_file_name" invisible="1" />
+                <field name="company_id" groups="base.group_multi_company" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_account_import" model="ir.actions.act_window">
+        <field name="name">Import Journal Entries</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">account.move.import.wizard</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_account_move_import_tree" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+            Import Journal Entries from a spreadsheet file.
+            Download the template file and fill it with your data.
+            </p>
+        </field>
+    </record>
+
+    <record id="account_move_import_wizard_action" model="ir.actions.act_window">
+        <field name="name">Import Journal Entries for selected Journal Items</field>
+        <field name="res_model">account.move.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem id="menu_account_import" name="Import Journal Entries" parent="account.menu_finance_entries_accounting_miscellaneous" action="action_account_import" sequence="935" groups="account.group_account_manager" />
+</odoo>

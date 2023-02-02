@@ -31,8 +31,8 @@ class PurchaseOrderWizard(models.TransientModel):
             raise UserError(_("O CNPJ do emitente não é igual ao CNPJ do parceiro do pedido de compras"))
 
         itens =  {}
-        search_itens = ["nNF", "chNFe","serie","nProt","finNFe", "dhRecbto","dhEmi","vNF"]
-        
+        search_itens = ["nNF", "chNFe","serie","nProt","finNFe", "dhRecbto","dhEmi","vNF", "cStat", "xMotivo"]
+
         for item in search_itens:
             src = root.find(".//{http://www.portalfiscal.inf.br/nfe}"+ item).text
             if item in ["dhRecbto","dhEmi"]:
@@ -77,9 +77,17 @@ class PurchaseOrderWizard(models.TransientModel):
                 }
             )
             return notification
-        
-        invoice_id = purchase.action_create_invoice()            
-        self.env["account.move"].browse(invoice_id).write(vals)
+        invoice_id = purchase.action_create_invoice()
+        invoice_eletronic = self.env["account.move"].browse(invoice_id['res_id'])
+        invoice_eletronic.write(vals)
+        # invoice_eletronic.authorization_event_id.set_done(
+        #         status_code=itens["cStat"],
+        #         response=itens["xMotivo"],
+        #         protocol_date=itens["dhRecbto"],
+        #         protocol_number=itens["nProt"],
+        #         file_response_xml=base,
+        #     )
+        return invoice_id
 
     def clear_cnpj(self, cnpj):
         return cnpj.replace(".","").replace("/","").replace("-","")

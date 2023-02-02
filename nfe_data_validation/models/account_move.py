@@ -13,5 +13,6 @@ class AccountMove(models.Model):
 		document = self.fiscal_document_id
 		document.valida_dados_remetente()
 		document.valida_dados_destinatario()
+		document.valida_endereco_entrega()
 		document.valida_dados_produtos()
 		return super().action_post() 

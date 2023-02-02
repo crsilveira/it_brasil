@@ -13,7 +13,7 @@ from odoo.exceptions import UserError
 
 from odoo.addons.account_move_base_import.parser.file_parser import FileParser
 
-from ..constants.br_cobranca import get_brcobranca_api_url
+from ..constants.br_cobranca import get_brcobranca_api_url, get_cobranca_provider
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +78,12 @@ class CNABFileParser(FileParser):
     def _get_brcobranca_retorno(self, files):
 
         bank_name_brcobranca = dict_brcobranca_bank[self.bank.code_bc]
-        brcobranca_api_url = get_brcobranca_api_url()
+        brcobranca_api_url = get_brcobranca_api_url(self.env)
+        cobranca_provider = get_cobranca_provider(self.env)
         # Ex.: "http://boleto_cnab_api:9292/api/retorno"
         brcobranca_service_url = brcobranca_api_url + "/api/retorno"
+        if cobranca_provider == "plugboleto":
+            brcobranca_service_url = brcobranca_api_url + "/api/v1/retornos"
         logger.info(
             "Connecting to %s to get CNAB-RETORNO of file name %s",
             brcobranca_service_url,
@@ -188,6 +191,13 @@ class CNABFileParser(FileParser):
         if bank_name_brcobranca == "ailos":
             # No AILOS o código de registro onde ficam as linhas CNAB é o 3.
             registration_code_allowed = 3
+        elif bank_name_brcobranca == "banco_brasil":
+            # No Banco do Brasil o código do registro principal é o 7.
+            # existem registros opcionais porém como não estão mapeados no BRCobrança
+            # e serão ignorados aqui. Teoricamente a verificação do código do registro
+            # nem deveria se feita aqui, cada dict retornado da lib era pra representar
+            # um registro completo do boleto. Esse tratamento deveria estar lá.
+            registration_code_allowed = 7
         else:
             registration_code_allowed = 1
 

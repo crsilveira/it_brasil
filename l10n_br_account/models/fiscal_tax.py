@@ -34,13 +34,18 @@ class FiscalTax(models.Model):
             account_taxes = fiscal_tax._account_taxes()
             if not account_taxes:
                 tax_users = {"sale": "out", "purchase": "in"}
-
                 for tax_use in tax_users.keys():
+                    # se cadastrar um novo grupo de Impostos e adicionar um 
+                    # imposto novo da erro sem o if abaixo
+                    if hasattr(fiscal_tax, 'account_tax_group'):
+                        tax_group_id = fiscal_tax.account_tax_group().id
+                    else:
+                        tax_group_id = fiscal_tax.tax_group_id.id
                     tax_values = {
                         "name": fiscal_tax.name + " " + tax_users.get(tax_use),
                         "type_tax_use": tax_use,
                         "fiscal_tax_ids": [(4, fiscal_tax.id)],
-                        "tax_group_id": fiscal_tax.account_tax_group().id,
+                        "tax_group_id": tax_group_id,
                         "amount": 0.00,
                     }
 

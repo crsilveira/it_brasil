@@ -17,6 +17,7 @@ from ..constants.br_cobranca import (
     DICT_BRCOBRANCA_CNAB_TYPE,
     get_brcobranca_api_url,
     get_brcobranca_bank,
+    get_cobranca_provider,
 )
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,7 @@ class PaymentOrder(models.Model):
             {
                 "convenio": int(self.payment_mode_id.code_convetion),
                 "variacao_carteira": self.payment_mode_id.boleto_variation.zfill(3),
+                "convenio_lider": self.payment_mode_id.code_convenio_lider.zfill(7),
                 "carteira": str(self.payment_mode_id.boleto_wallet).zfill(2),
             }
         )
@@ -134,7 +136,12 @@ class PaymentOrder(models.Model):
         pagamentos = []
         for line in self.bank_line_ids:
             pagamentos.append(line.prepare_bank_payment_line(bank_brcobranca))
-
+        
+        if not self.payment_mode_id.cnab_sequence_id:
+            raise ValidationError(
+                _("The CNAB sequence is not defined in the payment mode.")
+            )
+        
         remessa_values = {
             "carteira": str(self.payment_mode_id.boleto_wallet),
             "agencia": bank_account_id.bra_number,
@@ -171,10 +178,12 @@ class PaymentOrder(models.Model):
         f.close()
         files = {"data": open(f.name, "rb")}
 
-        brcobranca_api_url = get_brcobranca_api_url()
+        brcobranca_api_url = get_brcobranca_api_url(self.env)
+        cobranca_provider = get_cobranca_provider(self.env)
         # EX.: "http://boleto_cnab_api:9292/api/remessa"
         brcobranca_service_url = brcobranca_api_url + "/api/remessa"
-        
+        if cobranca_provider == "plugboleto":
+            brcobranca_service_url = brcobranca_api_url + "/api/v1/remessas/lote"
         logger.info(
             "Connecting to %s to generate CNAB-REMESSA file for Payment Order %s",
             brcobranca_service_url,

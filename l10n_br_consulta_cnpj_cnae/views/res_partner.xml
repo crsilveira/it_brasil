@@ -46,6 +46,17 @@
                     <field name="cnpjws_situacao_cadastral" />
                     <field name="cnpjws_porte" />
                     <field name="cnpjws_atualizado_odoo" />
+                    <field name="cnpjws_email" />
+                    <field name="cnpjws_telefone" />
+                </group>
+                <group name="cnpjws_socios" string="Quadro societario">
+                    <field name="cnpj_socios_id" attrs="{'invisible': [('is_company','!=', True)]}">
+                        <tree editable="bottom">
+                            <field name="partner_id" invisible="1" />
+                            <field name="name" string="Nome" />   
+                            <field name="qualificacao" string="Qualificação" />  
+                        </tree>
+                    </field>
                 </group>
                 <group name="cnpjws_cnae_sec" string="Dados de CNAE secundários">
                     <field name="cnae_cnpj_sec_id" attrs="{'invisible': [('is_company','!=', True)]}">

@@ -37,23 +37,13 @@ class FiscalDocumentMixinMethods(models.AbstractModel):
 
     def _compute_amount(self):
         fields = self._get_amount_fields()
-        # import pudb;pu.db
         for doc in self:
-            # total_others = 0.0
-            # total_geral = 0.0
             values = {key: 0.0 for key in fields}
             for line in doc._get_amount_lines():
                 for field in fields:
                     if field in line._fields.keys():
                         values[field] += line[field]
                     if field.replace("amount_", "") in line._fields.keys():
-                        # import pudb;pu.db
-                        # if field in ("amount_other_value", "amount_freight_value"):
-                        #     # import pudb;pu.db
-                        #     total_others += line[field.replace("amount_", "")]
-                        # if field == "amount_financial_total":
-                        #     # import pudb;pu.db
-                        #     total_geral += line[field.replace("amount_", "")]
                         # FIXME this field creates an error in invoice form
                         if field == "amount_financial_discount_value":
                             values[
@@ -61,13 +51,17 @@ class FiscalDocumentMixinMethods(models.AbstractModel):
                             ] += 0  # line.financial_discount_value
                         else:
                             values[field] += line[field.replace("amount_", "")]
-            # if total_others:
-            #     import pudb;pu.db
-            #     values["amount_total"] = values["amount_total"] + total_others
-            #     values["amount_financial_total"] = values["amount_financial_total"] + total_others
-            #     values["amount_financial_total_gross"] = values["amount_financial_total_gross"] + total_others
-            # import pudb;pu.db
-            doc.update(values) 
+
+            # Valores definidos pelo Total e não pela Linha
+            if (
+                doc.company_id.delivery_costs == "total"
+                or doc.force_compute_delivery_costs_by_total
+            ):
+                values["amount_freight_value"] = doc.amount_freight_value
+                values["amount_insurance_value"] = doc.amount_insurance_value
+                values["amount_other_value"] = doc.amount_other_value
+
+            doc.update(values)
 
     def __document_comment_vals(self):
         return {
@@ -103,3 +97,143 @@ class FiscalDocumentMixinMethods(models.AbstractModel):
         if self.fiscal_operation_id:
             self.operation_name = self.fiscal_operation_id.name
             self.comment_ids = self.fiscal_operation_id.comment_ids
+
+    def _inverse_amount_freight(self):
+        if self._fields.get('active') and not self.active:
+            return
+        for record in self.filtered(lambda doc: doc._get_amount_lines()):
+            if (
+                record.delivery_costs == "total"
+                or record.force_compute_delivery_costs_by_total
+            ):
+
+                amount_freight_value = record.amount_freight_value
+                if all(record._get_amount_lines().mapped("freight_value")):
+                    amount_freight_old = sum(
+                        record._get_amount_lines().mapped("freight_value")
+                    )
+                    for line in record._get_amount_lines()[:-1]:
+                        line.freight_value = amount_freight_value * (
+                            line.freight_value / amount_freight_old
+                        )
+                    record._get_amount_lines()[
+                        -1
+                    ].freight_value = amount_freight_value - sum(
+                        line.freight_value for line in record._get_amount_lines()[:-1]
+                    )
+                else:
+                    amount_total = sum(record._get_amount_lines().mapped("price_gross"))
+                    for line in record._get_amount_lines()[:-1]:
+                        if not line.price_gross == 0:
+                            line.freight_value = amount_freight_value * (
+                                line.price_gross / amount_total
+                            )
+                    record._get_amount_lines()[
+                        -1
+                    ].freight_value = amount_freight_value - sum(
+                        line.freight_value for line in record._get_amount_lines()[:-1]
+                    )
+                for line in record._get_amount_lines():
+                    line._onchange_fiscal_taxes()
+                record._fields["amount_total"].compute_value(record)
+                record.write(
+                    {
+                        name: value
+                        for name, value in record._cache.items()
+                        if record._fields[name].compute == "_amount_all"
+                        and not record._fields[name].inverse
+                    }
+                )
+
+    def _inverse_amount_insurance(self):
+        if self._fields.get('active') and not self.active:
+            return
+        for record in self.filtered(lambda doc: doc._get_amount_lines()):
+            if (
+                record.delivery_costs == "total"
+                or record.force_compute_delivery_costs_by_total
+            ):
+
+                amount_insurance_value = record.amount_insurance_value
+                if all(record._get_amount_lines().mapped("insurance_value")):
+                    amount_insurance_old = sum(
+                        record._get_amount_lines().mapped("insurance_value")
+                    )
+                    for line in record._get_amount_lines()[:-1]:
+                        line.insurance_value = amount_insurance_value * (
+                            line.insurance_value / amount_insurance_old
+                        )
+                    record._get_amount_lines()[
+                        -1
+                    ].insurance_value = amount_insurance_value - sum(
+                        line.insurance_value for line in record._get_amount_lines()[:-1]
+                    )
+                else:
+                    amount_total = sum(record._get_amount_lines().mapped("price_gross"))
+                    for line in record._get_amount_lines()[:-1]:
+                        if not line.price_gross == 0:
+                            line.insurance_value = amount_insurance_value * (
+                                line.price_gross / amount_total
+                            )
+                    record._get_amount_lines()[
+                        -1
+                    ].insurance_value = amount_insurance_value - sum(
+                        line.insurance_value for line in record._get_amount_lines()[:-1]
+                    )
+                for line in record._get_amount_lines():
+                    line._onchange_fiscal_taxes()
+                record._fields["amount_total"].compute_value(record)
+                record.write(
+                    {
+                        name: value
+                        for name, value in record._cache.items()
+                        if record._fields[name].compute == "_amount_all"
+                        and not record._fields[name].inverse
+                    }
+                )
+
+    def _inverse_amount_other(self):
+        if self._fields.get('active') and not self.active:
+            return
+        for record in self.filtered(lambda doc: doc._get_amount_lines()):
+            if (
+                record.delivery_costs == "total"
+                or record.force_compute_delivery_costs_by_total
+            ):
+                amount_other_value = record.amount_other_value
+                if all(record._get_amount_lines().mapped("other_value")):
+                    amount_other_old = sum(
+                        record._get_amount_lines().mapped("other_value")
+                    )
+                    for line in record._get_amount_lines()[:-1]:
+                        line.other_value = amount_other_value * (
+                            line.other_value / amount_other_old
+                        )
+                    record._get_amount_lines()[
+                        -1
+                    ].other_value = amount_other_value - sum(
+                        line.other_value for line in record._get_amount_lines()[:-1]
+                    )
+                else:
+                    amount_total = sum(record._get_amount_lines().mapped("price_gross"))
+                    for line in record._get_amount_lines()[:-1]:
+                        if not line.price_gross == 0:
+                            line.other_value = amount_other_value * (
+                                line.price_gross / amount_total
+                            )
+                    record._get_amount_lines()[
+                        -1
+                    ].other_value = amount_other_value - sum(
+                        line.other_value for line in record._get_amount_lines()[:-1]
+                    )
+                for line in record._get_amount_lines():
+                    line._onchange_fiscal_taxes()
+                record._fields["amount_total"].compute_value(record)
+                record.write(
+                    {
+                        name: value
+                        for name, value in record._cache.items()
+                        if record._fields[name].compute == "_amount_all"
+                        and not record._fields[name].inverse
+                    }
+                )

@@ -15,9 +15,9 @@ class AccountPaymentMode(models.Model):
     _name = "account.payment.mode"
     _inherit = [
         "account.payment.mode",
-        "mail.thread",
         "l10n_br_cnab.boleto.fields",
         "l10n_br_cnab.payment.fields",
+        "mail.thread",
     ]
 
     auto_create_payment_order = fields.Boolean(
@@ -91,7 +91,10 @@ class AccountPaymentMode(models.Model):
     )
     def _check_cnab_restriction(self):
         for record in self:
-            if record.payment_method_code not in BR_CODES_PAYMENT_ORDER:
+            if (
+                record.payment_method_code not in BR_CODES_PAYMENT_ORDER
+                or self.payment_type == "outbound"
+            ):
                 return False
             fields_forbidden_cnab = []
             if record.group_lines:
@@ -110,7 +113,11 @@ class AccountPaymentMode(models.Model):
                     % field
                 )
 
-            if self.bank_code_bc == "341" and not self.boleto_wallet:
+            if (
+                self.bank_code_bc == "341"
+                and self.payment_type == "inbound"
+                and not self.boleto_wallet
+            ):
                 raise ValidationError(_("Carteira no banco Itaú é obrigatória"))
 
     def get_own_number_sequence(self, inv, numero_documento):

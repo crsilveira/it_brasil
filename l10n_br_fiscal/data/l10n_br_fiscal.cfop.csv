@@ -607,7 +607,7 @@
 "cfop_7251","7251","Venda de energia elétrica para o exterior","Venda de energia elétrica para o exterior","out","3","sale_commerce","1","1","1","0"
 "cfop_7301","7301","Prestação de serviço de comunicação para execução de serviço da mesma natureza","Prestação de serviço de comunicação para execução de serviço da mesma natureza","out","3","sale_service","0","1","1","0"
 "cfop_7358","7358","Prestação de serviço de transporte","Prestação de serviço de transporte","out","3","sale_service","0","1","1","0"
-"cfop_7501","7501","Exportação de mercadorias recebidas com fim específico de exportação","Exportação de mercadorias recebidas com fim específico de exportação","out","3","return_out","1","0","1","0"
+"cfop_7501","7501","Exportação de mercadorias recebidas com fim específico de exportação","Exportação de mercadorias recebidas com fim específico de exportação","out","3","return_out","1","1","1","0"
 "cfop_7504","7504","Exportação de mercadoria que foi objeto de formação de lote de exportação","Exportação de mercadoria que foi objeto de formação de lote de exportação","out","3","return_out","1","0","1","0"
 "cfop_7551","7551","Venda de bem do ativo imobilizado","Venda de bem do ativo imobilizado","out","3","sale_asset","1","1","1","1"
 "cfop_7552","7552","Saída de produtos destinados ao uso ou consumo de bordo, em embarcações ou aeronaves exclusivamente em tráfego internacional com destino ao exterior","Saída de produtos destinados ao uso ou consumo de bordo, em embarcações ou aeronaves exclusivamente em tráfego internacional com destino ao exterior","out","3","return_out","1","0","1","0"

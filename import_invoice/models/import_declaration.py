@@ -15,9 +15,9 @@ class ImportDeclarationLine(models.Model):
         for item in self:
             item.brl_currency_id = self.env.ref("base.BRL").id
 
-    name = fields.Char('Adição', size=3)
+    name = fields.Char('Adição/Reg. exportação', size=3)
     sequence_di = fields.Integer('Sequência', default=1, required=True)
-    manufacturer_code = fields.Char('Código do Fabricante', size=60, required=True)
-    amount_discount = fields.Monetary(string='Valor', currency_field="brl_currency_id")
+    manufacturer_code = fields.Char('Cód. Fabricante/Chave NFe', size=60, required=True)
+    amount_discount = fields.Monetary(string='Valor/Quantidade Exp.', currency_field="brl_currency_id", required=True)
     drawback_number = fields.Char('Número Drawback', size=11)
     company_id = fields.Many2one(comodel_name='res.company', string='Company', store=True, readonly=True, default=lambda s: s.env.company)

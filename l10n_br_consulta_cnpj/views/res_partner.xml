@@ -7,24 +7,27 @@
         <field name="arch" type="xml">
             <xpath expr="//sheet" position="before">
                 <div class="alert alert-warning mb-0" role="alert" attrs="{'invisible': ['|', ('cnpjws_situacao_cadastral', '=', 'Ativa'),('cnpjws_situacao_cadastral', '=', False)]}">
-                    Esse CNPJ está com a Situação Cadastral
+                    This CNPJ has the Registration Status
                     <strong>
                         <field name="cnpjws_situacao_cadastral" />
                     </strong>
-                    , talvez você não consiga emitir Nota Fiscal.
+                    , you may not be able to issue an Invoice.
                 </div>
                 <div class="alert alert-warning" role="alert" attrs="{'invisible': [('cnpjws_situacao_cadastral', '!=', 'Inapta')]}">
-                    Nota: A empresa com situação cadastral
+                    Note: The company with registration status
                     <strong>Inapta</strong>
-                    é aquela que deixou de cumprir alguma obrigação fiscal.
+                    is one that has failed to fulfill some tax obligation.
                 </div>
                 <div class="alert alert-danger" role="alert" attrs="{'invisible': [('cnpjws_situacao_cadastral', '!=', 'Baixada')]}">
-                    Nota: A empresa que tem sua inscrição no CNPJ
+                    Note: The company that has its registration in the CNPJ
                     <strong>Baixada</strong>
-                    é aquela que fez essa solicitação a conceder de ofício ou ao órgão competente.
+                    is the one who made this request to be granted ex officio or to the competent body.
                 </div>
                 <div class="alert alert-warning mb-0" role="alert" attrs="{'invisible': ['|', '&amp;', ('cnpjws_situacao_cadastral', '=', False), ('cnpjws_manual_razao_social', '=', False), ('cnpjws_size_legal_name', '&lt;=', 60)]}">
-                    A Razão Social contém <strong><field name="cnpjws_size_legal_name" readonly="True" /></strong> caracteres, e o máximo para emissão de Nota Fiscal é de 60. Por favor, faça  a abreviação antes de seguir com o pedido / faturamento.
+                    The Social Reason contains <strong><field name="cnpjws_size_legal_name" readonly="True" /></strong> characters, and the maximum for issuing an Invoice is 60. Please make the abbreviation before proceeding with the order / billing.
+                </div>
+                <div class="alert alert-warning mb-0" role="alert" attrs="{'invisible': ['|', '&amp;', ('cnpjws_situacao_cadastral', '=', False), ('cnpjws_manual_adress', '=', False), ('cnpjws_size_adress', '&lt;=', 60)]}">
+                    The address contains <strong><field name="cnpjws_size_adress" readonly="True" /></strong> characters, and the maximum for issuing an Invoice is 60. Please make the abbreviation before proceeding with the order / billing. The character count takes into account the 3 address fields. (Street Name/Street Name, Number, Complement)
                 </div>
             </xpath>
             <xpath expr="//div[@name='button_box']" position="inside">
@@ -33,14 +36,14 @@
                     type="object"
                     class="oe_stat_button"
                     icon="fa-search"
-                    string="Consultar CNPJ"
+                    string="Consult CNPJ"
                     attrs="{'invisible': [('company_type', '=', 'person')]}"></button>
             </xpath>
             <page name="sales_purchases" position="after">
-                <page name="cnpjws" string="Informações do CNPJ">
-                    <group name="cnpjws_info" string="Dados de consulta">
+                <page name="cnpjws" string="CNPJ Informations" attrs="{'invisible': [('cnpjws_situacao_cadastral', '=', False)]}">
+                    <group name="cnpjws_info">
                         <field name="cnpjws_manual_razao_social" invisible="True" readonly="True"/>
-                        <field name="cnpjws_size_legal_name" readonly="True" />
+                        <field name="cnpjws_size_legal_name" readonly="True" attrs="{'invisible': [('cnpjws_size_legal_name', '&lt;=', 60)]}"/>
                         <field name="cnpjws_atualizadoem" />
                         <field name="cnpjws_razao_social" />
                         <field name="cnpjws_nome_fantasia" />
@@ -48,6 +51,9 @@
                         <field name="cnpjws_situacao_cadastral" />
                         <field name="cnpjws_porte" />
                         <field name="cnpjws_atualizado_odoo" />
+                        <field name="cnpjws_other_ies" attrs="{'invisible': [('cnpjws_other_ies', '=', False)]}"/>
+                        <field name="cnpjws_size_adress" invisible="True" readonly="True" />
+                        <field name="cnpjws_manual_adress" invisible="True" readonly="True" />
                     </group>
                 </page>
             </page>
@@ -71,12 +77,12 @@
         <field name="inherit_id" ref="base.view_res_partner_filter" />
         <field name="arch" type="xml">
             <xpath expr="//filter[@name='type_company']" position="after">
-                <filter string="Situaçao Cadastral Ativa" name="cnpj_ativa" domain="[('cnpjws_situacao_cadastral','=', 'Ativa')]" />
+                <filter string="Registration Status Ativa" name="cnpj_ativa" domain="[('cnpjws_situacao_cadastral','=', 'Ativa')]" />
             </xpath>
             <xpath expr="//filter[@name='inactive']" position="after">
-                <filter string="Situaçao Cadastral Baixada" name="cnpj_baixada" domain="[('cnpjws_situacao_cadastral','=', 'Baixada')]" />
-                <filter string="Situação Cadastral Inapta" name="cnpj_inapta" domain="[('cnpjws_situacao_cadastral','=', 'Inapta')]" />
-                <filter string="Situação Cadastral Não Definida" name="cnpj_nao_definido" domain="[('cnpjws_situacao_cadastral','=', False)]" />
+                <filter string="Registration Status - Baixada" name="cnpj_baixada" domain="[('cnpjws_situacao_cadastral','=', 'Baixada')]" />
+                <filter string="Registration Status - Inapta" name="cnpj_inapta" domain="[('cnpjws_situacao_cadastral','=', 'Inapta')]" />
+                <filter string="Registration Status - Não Definida" name="cnpj_nao_definido" domain="[('cnpjws_situacao_cadastral','=', False)]" />
                 <separator />
             </xpath>
         </field>

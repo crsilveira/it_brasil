@@ -92,6 +92,23 @@ class Partner(models.Model):
         inverse_name="partner_id",
     )
 
+    cnpj_socios_id = fields.One2many(
+        string="Quadro Societario",
+        comodel_name="cnpj.socios",
+        inverse_name="partner_id",
+    )
+
+    cnpjws_email = fields.Char(
+        string="Email Cadastral",
+        readonly=True,
+
+    )
+
+    cnpjws_telefone = fields.Char(
+        string="Telefone Cadastral",
+        readonly=True,
+    )
+
     def action_consult_cnpj_cnae(self):
         cnpjws_url = 'https://publica.cnpj.ws/cnpj/'
         if self.company_type == 'company':
@@ -144,6 +161,11 @@ class Partner(models.Model):
                     self.district = cnpjws_estabelecimento['bairro']
                     self.street2 = cnpjws_estabelecimento['complemento']
 
+                    self.cnpjws_email = cnpjws_estabelecimento['email']
+                    self.cnpjws_telefone = cnpjws_estabelecimento['ddd1'] + " " + cnpjws_estabelecimento['telefone1']
+
+                    cnpjws_socios = cnpjws_result['socios']
+
                     cnpjws_simples = cnpjws_result['simples']
                     cnpjws_ie = cnpjws_estabelecimento['inscricoes_estaduais']
 
@@ -156,10 +178,12 @@ class Partner(models.Model):
                     fiscal_info.append(cnpjws_ie)
                     fiscal_info.append(cnpjws_cnae)
                     fiscal_info.append(cnpjws_cnae_sec)
+                    fiscal_info.append(cnpjws_socios)
 
                     self.cnae_cnpj(fiscal_info)
                     self.define_cnae_sec(fiscal_info)
                     self.define_inscricao_estadual(fiscal_info)
+                    self.define_socios(fiscal_info)
                     
                     self.cnpjws_atualizadoem = datetime.strptime(
                         cnpjws_result['atualizado_em'], '%Y-%m-%dT%H:%M:%S.%fZ')
@@ -202,25 +226,48 @@ class Partner(models.Model):
         if search_cnae_sec_del:
             for cnae_del in search_cnae_sec_del:
                 cnae_del.unlink()
-        for cnae in result_cnae:
-            search_cnae_sec = self.env['cnae.cnpj.sec'].search(
-                [('partner_id', '=', self.id),
-                    ('code', '=', cnae['subclasse'])]
-            )
-            if not search_cnae_sec:
-                try:
-                    incluir_outros_cnae = self.write(
-                        {"cnae_cnpj_sec_id": [(0, 0, {
-                            "code": cnae['subclasse'],
-                            "name": cnae['descricao']
+        #count number of cnaes in result cnae if not exist, create
+        if result_cnae:
+            count_cnae = len(result_cnae)
+            for i in range(count_cnae):
+                incluir_cnae_sec = self.write({
+                    'cnae_cnpj_sec_id': [(0, 0, {
+                        'partner_id': self.id,
+                        'code': result_cnae[i]['subclasse'],
+                        'name': result_cnae[i]['descricao'],
+                    })]
+                })
+                if incluir_cnae_sec:
+                    _logger.info("CNAE Secundário Adicionado: " +
+                                 str(incluir_cnae_sec))
+                else:
+                    _logger.warning("CNAE Secundário não foi adicionado:")
+                
 
+    #define socios da empresa
+    def define_socios(self, fiscal_info):
+        result = fiscal_info[4]
+        _logger.warning("Socios: %s", result)
+        search_cnpj_socios_del = self.env['cnpj.socios'].search(
+                [('partner_id', '=', self.id)]
+            )
+        if search_cnpj_socios_del:
+            for socio_del in search_cnpj_socios_del:
+                socio_del.unlink()
+
+        if result:
+            for socio in result:
+                qualificacao = str(socio['qualificacao_socio']['id']) + " - " + socio['qualificacao_socio']['descricao']
+                try:
+                    self.write(
+                       {"cnpj_socios_id": [(0, 0, {
+                           "name": socio['nome'],
+                           "qualificacao": qualificacao,
                         })]}
-                    )
-                    _logger.info(
-                        "CNAE secundário incluído")
+                        )
+                    _logger.info("Socio incluido")
                 except Exception:
-                    _logger.warning(
-                        "Erro ao incluir CNAE secundário: %s", cnae['subclasse'])
+                    _logger.warning("Erro ao incluir socio: %s", socio['nome'])
 
     def define_inscricao_estadual(self, fiscal_info):
         result_ie = fiscal_info[1]

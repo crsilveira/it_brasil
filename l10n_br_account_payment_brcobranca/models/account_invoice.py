@@ -12,7 +12,7 @@ import requests
 from odoo import _, fields, models
 from odoo.exceptions import Warning as UserError
 
-from ..constants.br_cobranca import get_brcobranca_api_url
+from ..constants.br_cobranca import get_brcobranca_api_url, get_cobranca_provider
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,10 @@ class AccountInvoice(models.Model):
         files = {"data": open(f.name, "rb")}
 
         brcobranca_api_url = get_brcobranca_api_url()
+        cobranca_provider = get_cobranca_provider()
         brcobranca_service_url = brcobranca_api_url + "/api/boleto/multi"
+        if cobranca_provider == "plugboleto":
+            brcobranca_service_url = brcobranca_api_url + "/api/v1/boletos/lote"
         logger.info(
             "Connecting to %s to get Boleto of invoice %s",
             brcobranca_service_url,

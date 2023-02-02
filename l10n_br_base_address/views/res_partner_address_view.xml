@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+
+  <record id="l10n_br_base_res_partner_address" model="ir.ui.view">
+    <field name="name">l10n_br_base.res.partner.address</field>
+    <field name="model">res.partner</field>
+    <field name="priority">16</field>
+    <field name="inherit_id" ref="base.view_partner_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//field[@name='zip']" position="replace">
+      </xpath>
+      <xpath expr="//field[@name='street']" position="replace">
+        <field name="street" invisible="1" />
+        <div class="o_address_format">
+          <field name="zip" placeholder="Zip code..." style="width: 70%" class="o_address_zip" />
+          <button name="zip_search" type="object" attrs="{'invisible': [('country_id', '!=', %(base.br)d)]}" class="btn-sm btn-link mb4 fa fa-search oe_edit_only" aria-label="Pesquisar CEP" title="Pesquisar CEP" />
+          <field name="street_name" placeholder="Street..." class="o_address_street" />
+          <field name="street_number" placeholder="Street number..." class="o_address_street" />
+        </div>
+      </xpath>
+      <xpath expr="//field[@name='street2']" position="after">
+        <field name="district" placeholder="District..." class="o_address_street" />
+      </xpath>
+      <xpath expr="//field[@name='state_id']" position="replace">
+        <field name="state_id" domain="[('country_id', '=', country_id)]" placeholder="State..." style="width: 46%" class="o_address_state" options='{"no_open": True, "no_create": True}'/>
+      </xpath>
+      <xpath expr="//field[@name='city']" position="replace">
+        <field name="city" placeholder="City..." style="width: 50%" class="o_address_city" force_save="True" attrs="{'invisible': [('country_id', '=', %(base.br)d)]}" />
+        <field name="city_id" placeholder="City..." style="width: 50%" class="o_address_city" options='{"no_open": True, "no_create": True}' attrs="{'invisible': [('country_id', '!=', %(base.br)d)]}" />
+      </xpath>
+      
+      <!-- Child Contact form -->
+      <xpath expr="//div[@name='div_address']//field[@name='street2']" position="before">
+        <field name="street_name" placeholder="Street..." class="o_address_street" />
+        <field name="street_number" placeholder="Street number..." class="o_address_street" />
+      </xpath>
+      <xpath expr="//div[@name='div_address']//field[@name='state_id']" position="replace">
+        <field name="state_id" domain="[('country_id', '=', country_id)]" placeholder="State..." class="o_address_state" style="width: 100%" options='{"no_open": True, "no_create": True}'/>
+      </xpath>
+      <xpath expr="//div[@name='div_address']//field[@name='city']" position="replace">
+        <field name="district" placeholder="District..." class="o_address_street" />
+        <field name="city" placeholder="City..." style="width: 100%" class="o_address_city" force_save="True" attrs="{'invisible': [('country_id', '=', %(base.br)d)]}" />
+        <field name="city_id" placeholder="City..." style="width: 100%" class="o_address_city" options='{"no_open": True, "no_create": True}' attrs="{'invisible': [('country_id', '!=', %(base.br)d)]}" />
+      </xpath>
+      <xpath expr="//div[@name='div_address']//field[@name='zip']" position="replace">
+        <field name="zip" placeholder="Zip code..." style="width: 80%" class="o_address_zip" />
+        <button name="zip_search" type="object" attrs="{'invisible': [('country_id', '!=', %(base.br)d)]}" class="btn-sm btn-link mb4 fa fa-search oe_edit_only" aria-label="Pesquisar CEP" title="Pesquisar CEP" />
+      </xpath>
+    </field>
+
+  </record>
+
+</odoo>

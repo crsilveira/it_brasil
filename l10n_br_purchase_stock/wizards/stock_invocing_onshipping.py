@@ -19,8 +19,13 @@ class StockInvoiceOnshipping(models.TransientModel):
         pick = fields.first(pickings)
         if pick.purchase_id:
             values["purchase_id"] = pick.purchase_id.id
-            # if pick.purchase_id.payment_term_id.id != values["payment_term_id"]:
-            #     values.update({"payment_term_id": pick.purchase_id.payment_term_id.id})
+
+            if pick.purchase_id.payment_term_id.id != values.get(
+                "invoice_payment_term_id"
+            ):
+                values.update(
+                    {"invoice_payment_term_id": pick.purchase_id.payment_term_id.id}
+                )
 
         return invoice, values
 
@@ -34,12 +39,7 @@ class StockInvoiceOnshipping(models.TransientModel):
         if move.purchase_line_id:
             # TODO: deveria permitir agrupar as linhas ?
             #  Deveria permitir agrupar Pedidos de Compras ?
-            if type(key) is tuple:
-                key = key + (move.purchase_line_id,)
-            else:
-                # TODO - seria melhor identificar o TYPE para saber se
-                #  o KEY realmente é um objeto nesse caso
-                key = (key, move.purchase_line_id)
+            key = key + (move.purchase_line_id,)
 
         return key
 
@@ -61,14 +61,3 @@ class StockInvoiceOnshipping(models.TransientModel):
                 values["purchase_line_id"] = moves.purchase_line_id.id
 
         return values
-
-    # def _prepare_move_default_values(self, return_line, new_picking):
-    #     vals = super()._prepare_move_default_values(return_line, new_picking)
-    #     if self.invoice_state == "2binvoiced":
-    #         # vals.update({"invoice_state": self.invoice_state})
-    #         import pudb;pu.db
-    #         if self.fiscal_operation_journal:
-    #             pickings = self._load_pickings()
-    #             picking = fields.first(pickings)
-    #             journal = picking.fiscal_operation_id.journal_id
-    #     return vals

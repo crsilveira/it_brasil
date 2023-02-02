@@ -474,7 +474,7 @@
                   </group>
               </page>
               <page name="ii" string="II" attrs="{'invisible': [('cfop_destination', '!=', '3')]}">
-                    <group string="Detalhes do Imposto de Importação">
+                    <group string="Detalhes do Imposto de Importação/Exportação">
                         <field name="ii_tax_id" options="{'no_create': True, 'no_create_edit': True}"/>
                     </group>
                     <group>
@@ -487,26 +487,34 @@
                             <field name="ii_customhouse_charges" />
                         </group>
                     </group>
-                    <group string="Declaração de Importação">
+                    <group string="Declaração de Importação/Exportação">
                         <group>
-                            <field name="number_di" force_save="1" attrs="{'required': [('cfop_destination', '=', '3')]}"/>
-                            <field name="date_registration" force_save="1" attrs="{'required': [('cfop_destination', '=', '3')]}"/>
-                            <field name="state_id" options="{'no_create': True, 'no_create_edit': True}" force_save="1" attrs="{'required': [('cfop_destination', '=', '3')]}"/>
-                            <field name="location" force_save="1" attrs="{'required': [('cfop_destination', '=', '3')]}"/>
-                            <field name="date_release" force_save="1" attrs="{'required': [('cfop_destination', '=', '3')]}"/>
-                            <field name="type_transportation" force_save="1" attrs="{'required': [('cfop_destination', '=', '3')]}"/>
+                            <field name="number_di" string="Núm. DI/Núm. Drawback" force_save="1" />
+                            <field name="date_registration" force_save="1" />
+                            <field name="state_id" options="{'no_create': True, 'no_create_edit': True}" force_save="1" />
+                            <field name="location" force_save="1" />
+                            <field name="date_release" force_save="1" />
+                            <field name="type_transportation" force_save="1" />
                         </group>
                         
                         <group>
                             <field name="afrmm_value" force_save="1"/>
-                            <field name="tpIntermedio" force_save="1" attrs="{'required': [('cfop_destination', '=', '3')]}"/>                            
+                            <field name="tpIntermedio" force_save="1" />                            
                             <field name="thirdparty_cnpj" force_save="1"/>
                             <field name="thirdparty_state_id" options="{'no_create': True, 'no_create_edit': True}" force_save="1"/>
-                            <field name="exporting_code" force_save="1" attrs="{'required': [('cfop_destination', '=', '3')]}"/>                             
+                            <field name="exporting_code" force_save="1" />                             
                         </group>
 
-                        <group string="Adições" colspan="4">
-                            <field name="di_ids" nolabel="1" force_save="1" domain="[]" attrs="{'required': [('cfop_destination', '=', '3')]}" />
+                        <group string="Adições/Exportações" colspan="4">
+                            <field name="di_ids" nolabel="1" force_save="1" domain="[]" />
+                                <!-- <tree>
+                                    <field name="name" />
+                                    <field name="sequence_di" />
+                                    <field name="manufacturer_code" />
+                                    <field name="amount_discount" />
+                                    <field name="drawback_number" />
+                                </tree> -->
+                            <!-- </field> -->
                         </group> 
                     </group>
             </page>

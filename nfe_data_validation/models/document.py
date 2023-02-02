@@ -95,6 +95,48 @@ class NFe(spec_models.StackedModel):
         else:
             raise ValidationError(
                 'Não há Parceiro vinculado ao documento fiscal!')
+    
+    def valida_endereco_entrega(self):
+        if not self.document_type:
+            return True
+        partner_address = self.partner_shipping_id
+
+        if not partner_address:
+            return True
+        else:
+            if partner_address.zip and partner_address.street_number and partner_address.country_id.code == 'BR':
+                partner_address.zip_search()
+                if not partner_address.legal_name:
+                    partner_address.legal_name = self.partner_id.legal_name
+                return True
+            elif partner_address.country_id.code != 'BR':
+                raise ValidationError(
+                    'Por favor, remova o endereço de entrega antes de validar a fatura!')
+            else:
+                msg = 'Os dados cadastrais do endereço de entrega estão incompletos. Favor preencher os seguintes campos:\n'
+                count = 0
+                if not partner_address.street_name:
+                    msg += '\n    - Nome da Rua (Logradouro);'
+                    count += 1
+                if not partner_address.street_number:
+                    msg += '\n    - Número da rua;'
+                    count += 1
+                if not partner_address.district:
+                    if partner_address.country_id.code == 'BR':
+                        msg += '\n    - Bairro;'
+                        count += 1
+                if not partner_address.city:
+                    if partner_address.country_id.code == 'BR':
+                        msg += '\n    - Cidade;'
+                        count += 1
+                    else:
+                        partner_address.city = '9999999'
+                if not partner_address.state_id:
+                    if partner_address.country_id.code == 'BR':
+                        msg += '\n    - Estado;'
+                        count += 1
+                if count > 0:
+                    raise ValidationError(msg)
 
     def valida_dados_produtos(self):
         if not self.document_type:

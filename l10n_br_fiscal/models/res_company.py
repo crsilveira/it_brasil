@@ -48,12 +48,6 @@ class ResCompany(models.Model):
             "cnae_main_id",
         ]
 
-    @api.model
-    def default_get(self, fields):
-        rec = super().default_get(fields)
-        rec["fiscal_dummy_id"] = self._default_fiscal_dummy_id().id
-        return rec
-
     def _inverse_cnae_main_id(self):
         """Write the l10n_br specific functional fields."""
         for c in self:
@@ -83,6 +77,24 @@ class ResCompany(models.Model):
             "company_id": self.id,
             "fiscal_line_ids": [(0, 0, {"name": "dummy", "company_id": self.id})],
         }
+
+    @api.model
+    def create(self, vals):
+        """
+        to satisfy the not-null constraint of the fiscal_dummy_id field,
+        the fiscal dummy is passed without a company_id and updated
+        after it is created.
+        """
+        dummy_doc = (
+            self.env["l10n_br_fiscal.document"]
+            .sudo()
+            .create(self._prepare_create_fiscal_dummy_doc())
+        )
+        vals.update({"fiscal_dummy_id": dummy_doc.id})
+        company = super().create(vals)
+        dummy_doc.company_id = company
+        dummy_doc.fiscal_line_ids.company_id = company
+        return company
 
     @api.model
     def _default_fiscal_dummy_id(self):
@@ -374,6 +386,14 @@ class ResCompany(models.Model):
         ondelete="restrict",
     )
 
+    delivery_costs = fields.Selection(
+        selection=[("line", "By Line"), ("total", "By Total")],
+        string="Delivery Costs",
+        help="Define if costs of Insurance, Freight and Other Costs"
+        " should be informed by Line or by Total.",
+        default="line",
+    )
+    
     def _del_tax_definition(self, tax_domain):
         tax_def = self.tax_definition_ids.filtered(
             lambda d: d.tax_group_id.tax_domain != tax_domain

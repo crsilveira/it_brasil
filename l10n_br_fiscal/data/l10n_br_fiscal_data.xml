@@ -16,4 +16,14 @@
           <field name="digits">4</field>
     </record>
 
+    <record forcecreate="True" id="fiscal_unit" model="decimal.precision">
+          <field name="name">Fiscal Unit</field>
+          <field name="digits">8</field>
+    </record>
+
+    <record forcecreate="True" id="fiscal_price" model="decimal.precision">
+          <field name="name">Fiscal Price</field>
+          <field name="digits">10</field>
+    </record>    
+
 </odoo>

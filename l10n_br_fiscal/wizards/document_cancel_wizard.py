@@ -3,6 +3,8 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import models
+import logging
+_logger = logging.getLogger(__name__)
 
 
 class DocumentCancelWizard(models.TransientModel):
@@ -14,6 +16,11 @@ class DocumentCancelWizard(models.TransientModel):
         self.document_id._document_cancel(self.justification)
 
     def doit(self):
+        if self.justification != False:
+            if len(self.justification) < 15:
+                raise models.ValidationError("A justificativa deve ter no mínimo 15 caracteres.")
+        else:
+            raise models.ValidationError("A justificativa é obrigatória.")
         for wizard in self:
             if wizard.document_id:
                 wizard.do_cancel()

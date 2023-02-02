@@ -4,6 +4,7 @@ Para configurar esse modulo é preciso:
 * Rodar a biblioteca BRCobranca como um micro-serviço https://github.com/akretion/boleto_cnab_api .
 * Informar a variável de ambiente **BRCOBRANCA_API_URL** no arquivo de configuração do Odoo ou se estiver usando o docky na seção enviroment https://github.com/akretion/docky-odoo-brasil/blob/12.0/docker-compose.yml#L3 , exemplo:
   **BRCOBRANCA_API_URL=http://boleto_cnab_api:9292**
+* Caso esteja utilizando o Serviço PlugBoleto, informar a variável de ambiente **COBRANCA_PROVIDER** no arquivo de configuração do Odoo, exemplo **COBRANCA_PROVIDER=plugboleto**.
 * Verifique se os Códigos de Movimento do CNAB a ser usado existem em Faturamento > Configurações > Administração > Códigos de Instrução do Movimento CNAB, se for necessário criar considere fazer um PR para adicionar como dados aqui https://github.com/OCA/l10n-brazil/blob/12.0/l10n_br_account_payment_order/data/l10n_br_cnab_mov_instruction_code_data.xml .
 * Verifique se os Códigos de Retorno do Movimento do CNAB a ser usado existem em Faturamento > Configurações > Administração > Códigos de Retorno de Movimento CNAB, se for necessário criar considere fazer um PR para adicionar como dados aqui https://github.com/OCA/l10n-brazil/blob/12.0/l10n_br_account_payment_order/data/l10n_br_cnab_return_move_code_data.xml .
 * Criar a Conta Bancária referente ao CNAB em Faturamento > Configurações > Contabilidade > Contas Bancárias .
@@ -18,6 +19,7 @@ To configure this module, you need to:
 * Run BRCobranca as micro-service https://github.com/akretion/boleto_cnab_api.
 * Inform the envoriment variable BRCOBRANCA_API_URL in the config odoo file or if are use docky in the section enviroment https://github.com/akretion/docky-odoo-brasil/blob/12.0/docker-compose.yml#L3 , example:
   **BRCOBRANCA_API_URL=http://boleto_cnab_api:9292**
+* If you are using the PlugBoleto service, inform the envoriment variable **COBRANCA_PROVIDER** in the config odoo file, example **COBRANCA_PROVIDER=plugboleto**.
 * Check if the CNAB Instruction Movement Code to be use exist in Invoicing > Configuration > Management > CNAB Movement Instruction Code if necessary create please consider make PR to add as data in https://github.com/OCA/l10n-brazil/blob/12.0/l10n_br_account_payment_order/data/l10n_br_cnab_mov_instruction_code_data.xml .
 * Check if the CNAB Return Move Code to be use exist in Invoicing > Configuration > Management > CNAB Return Move Code if necessary create please consider make PR to add as data in https://github.com/OCA/l10n-brazil/blob/12.0/l10n_br_account_payment_order/data/l10n_br_cnab_return_move_code_data.xml .
 * Create an Bank Account referent of CNAB in Invoicing > Configuration > Accounting > Bank Accounts .

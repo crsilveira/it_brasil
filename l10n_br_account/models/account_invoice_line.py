@@ -153,17 +153,10 @@ class AccountMoveLine(models.Model):
     def create(self, vals_list):
         dummy_doc = self.env.company.fiscal_dummy_id
         dummy_line = fields.first(dummy_doc.fiscal_line_ids)
-        new_vals_list = []
         for values in vals_list:
-            move = self.env['account.move'].browse(values.get('move_id'))
-            if len(values):
-                # move = self.env['account.move'].browse(values.get('move_id'))
-                if not move.is_invoice(include_receipts=True):
-                    # if vals_list[0].get('exclude_from_invoice_tab'):
-                    values['fiscal_document_line_id'] = dummy_line.id
-                    new_vals_list.append(values)
-                    continue
-            fiscal_doc_id = move.fiscal_document_id.id
+            fiscal_doc_id = (
+                self.env["account.move"].browse(values["move_id"]).fiscal_document_id.id
+            )
             if fiscal_doc_id == dummy_doc.id or values.get("exclude_from_invoice_tab"):
                 if len(dummy_line) < 1:
                     raise UserError(
@@ -171,27 +164,23 @@ class AccountMoveLine(models.Model):
                             "Document line dummy not found. Please contact "
                             "your system administrator."
                         )
-                    )                
-                values['fiscal_document_line_id'] = dummy_line.id
-            else:
-                values.update(
-                    self._update_fiscal_quantity(
-                        values.get("product_id"),
-                        values.get("price_unit"),
-                        values.get("quantity"),
-                        values.get("uom_id"),
-                        values.get("uot_id"),
                     )
+                values["fiscal_document_line_id"] = dummy_line.id
+
+            values.update(
+                self._update_fiscal_quantity(
+                    values.get("product_id"),
+                    values.get("price_unit"),
+                    values.get("quantity"),
+                    values.get("uom_id"),
+                    values.get("uot_id"),
                 )
-            new_vals_list.append(values)
+            )
 
-        lines = super().create(new_vals_list)
-
-        # for line in lines:
-        #     self._onchange_fiscal_operation_line_id()
-
+        lines = super().create(vals_list)
         for line in lines.filtered(lambda l: l.fiscal_document_line_id != dummy_line):
             shadowed_fiscal_vals = line._prepare_shadowed_fields_dict()
+            # sem o if da erro qdo tenta receber
             if shadowed_fiscal_vals:
                 doc_id = line.move_id.fiscal_document_id.id
                 shadowed_fiscal_vals["document_id"] = doc_id

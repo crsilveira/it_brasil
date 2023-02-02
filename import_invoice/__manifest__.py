@@ -2,15 +2,17 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 {
-    "name": "Importar Faturas",
+    "name": "Declaração de Importação e Importar XML de NF-e",
     "description": """Importar Faturas""",
-    "version": "14.0.1.0.0",
+    "version": "14.0.2.0.0",
     "license": "AGPL-3",
-    "author": "Lucas Avila",
+    "author": "Lucas Avila, IT Brasil",
+    "website": "https://itbrasil.com.br",
+    "category": "Accounting",
     "depends": [
             "base", 
             "l10n_br_nfe",
-            "l10n_br_purchase",
+            "l10n_br_purchase", 
         ],
     "data": [
         "security/ir.model.access.csv",
@@ -19,6 +21,5 @@
         "views/l10n_br_layout.xml",
     ],
     "demo": [],
-    "sequence": 5,
-    "application": True,
+    "application": False,
 }

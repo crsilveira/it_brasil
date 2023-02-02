@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="report_tax_nfe" model="ir.actions.report">
+            <field name="name">Relatorio Impostos NFe</field>
+            <field name="model">tax.report.nfe</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">l10n_br_tax_report.report_icms</field>
+            <field name="report_file">l10n_br_tax_report.report_icms</field>
+            <field name="binding_type">report</field>
+        </record>
+
+        <record id="report_tax_nfe_ipi" model="ir.actions.report">
+            <field name="name">Relatorio Impostos NFe</field>
+            <field name="model">tax.report.nfe</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">l10n_br_tax_report.report_ipi</field>
+            <field name="report_file">l10n_br_tax_report.report_ipi</field>
+            <field name="binding_type">report</field>
+        </record>
+
+        <record id="report_tax_nfe_pis" model="ir.actions.report">
+            <field name="name">Relatorio Impostos NFe</field>
+            <field name="model">tax.report.nfe</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">l10n_br_tax_report.report_pis</field>
+            <field name="report_file">l10n_br_tax_report.report_pis</field>
+            <field name="binding_type">report</field>
+        </record>
+
+        <record id="report_tax_nfe_cofins" model="ir.actions.report">
+            <field name="name">Relatorio Impostos NFe</field>
+            <field name="model">tax.report.nfe</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">l10n_br_tax_report.report_cofins</field>
+            <field name="report_file">l10n_br_tax_report.report_cofins</field>
+            <field name="binding_type">report</field>
+        </record>
+
+    </data>
+</odoo>

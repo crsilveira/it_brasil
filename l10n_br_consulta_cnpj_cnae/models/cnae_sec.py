@@ -12,12 +12,12 @@ class CnaeSecundary(models.Model):
     )
 
     code = fields.Char(size=16)
-    name = fields.Text(string="Name", required=True, index=True)
+    name = fields.Text(string="Name", required=True)
 
-    _sql_constraints = [
-        (
-            "cnae_cnpj_sec_code_uniq",
-            "unique (code)",
-            _("CNAE already exists with this code !"),
-        )
-    ]
+    # _sql_constraints = [
+    #     (
+    #         "cnae_cnpj_sec_code_uniq",
+    #         "unique (code)",
+    #         _("CNAE already exists with this code !"),
+    #     )
+    # ]

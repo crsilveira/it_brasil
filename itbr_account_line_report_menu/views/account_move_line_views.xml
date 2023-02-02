@@ -165,7 +165,11 @@
 		<field name="view_id" ref="receivable_payable_view_tree"/>
         <field name="search_view_id" ref="receivable_view_search"/>
 		<field name="context">{'search_default_open': 1}</field>
-		<field name="domain">[('account_id.internal_type', '=', 'receivable'), ('credit', '=', 0),('move_id.state', '=', 'posted')]</field>
+		<field name="domain">[
+			('account_id.internal_type', '=', 'receivable'),
+			('credit', '=', 0),('move_id.state', '=', 'posted'),
+			('move_id.financial_move_line_ids', '!=', False)
+			]</field>
 		<field name="help" type="html">
 			<p class="o_view_nocontent_smiling_face">
 				Não há Registros de Contas Receber
@@ -180,7 +184,11 @@
 		<field name="view_id" ref="receivable_payable_view_tree"/>
         <field name="search_view_id" ref="payable_view_search"/>
 		<field name="context">{'search_default_open': 1}</field>
-		<field name="domain">[('account_id.internal_type', '=', 'payable'), ('debit', '=', 0),('move_id.state', '=', 'posted')]</field>
+		<field name="domain">[
+			('account_id.internal_type', '=', 'payable'), 
+			('debit', '=', 0),('move_id.state', '=', 'posted'),
+			('move_id.financial_move_line_ids', '!=', False)
+			]</field>
 		<field name="help" type="html">
 			<p class="o_view_nocontent_smiling_face">
 				Não há Registros de Contas Pagar

@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<odoo>
-
-	<record id="group_credit_limit_manager" model="res.groups">
-		<field name="name">Gerente de Limite de Crédito</field>
-	</record>
-
-</odoo>

@@ -174,6 +174,12 @@ class FiscalDocumentMixin(models.AbstractModel):
         store=True,
     )
 
+    amount_icms_relief_value = fields.Monetary(
+        string="ICMS desonerado",
+        compute="_compute_amount",
+        store=True,
+    )
+
     amount_ipi_base = fields.Monetary(
         string="IPI Base",
         compute="_compute_amount",
@@ -400,16 +406,29 @@ class FiscalDocumentMixin(models.AbstractModel):
         string="Insurance Value",
         compute="_compute_amount",
         store=True,
+        inverse="_inverse_amount_insurance",
     )
 
     amount_other_value = fields.Monetary(
         string="Other Costs",
         compute="_compute_amount",
         store=True,
+        inverse="_inverse_amount_other",
     )
 
     amount_freight_value = fields.Monetary(
         string="Freight Value",
         compute="_compute_amount",
         store=True,
+        inverse="_inverse_amount_freight",
+    )
+
+    # Usado para tornar Somente Leitura os campos totais dos custos
+    # de entrega quando a definição for por Linha
+    delivery_costs = fields.Selection(
+        related="company_id.delivery_costs",
+    )
+
+    force_compute_delivery_costs_by_total = fields.Boolean(
+        "Force compute delivery costs by total", default=False
     )

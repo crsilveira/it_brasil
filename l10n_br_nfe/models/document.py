@@ -372,6 +372,7 @@ class NFe(spec_models.StackedModel):
     nfe40_vICMS = fields.Monetary(related="amount_icms_value")
 
     # <vICMSDeson>0.00</vICMSDeson> TODO
+    nfe40_vICMSDeson = fields.Monetary(related="amount_icms_relief_value")
 
     nfe40_vFCPUFDest = fields.Monetary(related="amount_icmsfcp_value")
 
@@ -550,6 +551,11 @@ class NFe(spec_models.StackedModel):
         related="company_id.technical_support_id",
     )
 
+    nfe40_entrega = fields.Many2one(
+        comodel_name="res.partner",
+        related="partner_shipping_id",
+    )
+
     ################################
     # Framework Spec model's methods
     ################################
@@ -687,6 +693,7 @@ class NFe(spec_models.StackedModel):
     def _processador(self):
         if not self.company_id.certificate_nfe_id:
             raise UserError(_("Certificado não encontrado"))
+        self._check_nfe_environment()
 
         certificado = cert.Certificado(
             arquivo=self.company_id.certificate_nfe_id.file,
@@ -701,6 +708,18 @@ class NFe(spec_models.StackedModel):
             versao=self.nfe_version,
             ambiente=self.nfe_environment,
         )
+
+    def _check_nfe_environment(self):
+        self.ensure_one()
+        company_nfe_environment = self.company_id.nfe_environment
+        if self.nfe_environment != company_nfe_environment:
+            raise UserError(
+                _(
+                    f"Nf-e environment: {self.nfe_environment}"
+                    " cannot be different from what is configured "
+                    f"in the company: {company_nfe_environment}"
+                )
+            )
 
     def _document_export(self, pretty_print=True):
         super()._document_export()
@@ -763,39 +782,58 @@ class NFe(spec_models.StackedModel):
         )
         self._change_state(state)
 
+
+        ######
+
+    def _exec_after_SITUACAO_EDOC_AUTORIZADA(self, old_state, new_state):
+        self.ensure_one()
+        try:
+            self.make_pdf()
+        except Exception as e:
+            # Não devemos interromper o fluxo
+            # E dar rollback em um documento
+            # autorizado, podendo perder dados.
+            # Se der problema que apareça quando
+            # o usuário clicar no gerar PDF novamente.
+            _logger.error("DANFE Error \n {}".format(e))
+
+
+        #######
+
     def _export_fields_faturas(self):
         inv = self.move_ids
-        fat_id = self.env["nfe.40.fat"].create(
-            {
-                "nfe40_nFat": inv.name,
-                "nfe40_vOrig": float(inv.amount_financial_total_gross),
-                "nfe40_vDesc": float(inv.amount_financial_discount_value),
-                "nfe40_vLiq": float(inv.amount_financial_total),
-            }
-        )
-        duplicatas = self.env["nfe.40.dup"]
-        count = 1
-        for mov in inv.financial_move_line_ids:
-            if mov.debit > 0 and mov.account_id.user_type_id.type in ['receivable', 'payable']:
-                duplicatas += duplicatas.create(
-                    {
-                        "nfe40_nDup": str(count).zfill(3),
-                        "nfe40_dVenc": mov.date_maturity,
-                        "nfe40_vDup": mov.debit,
-                    }
-                )
-                count += 1
-        cobr_id = self.env["nfe.40.cobr"].create(
-            {
-                "nfe40_fat": fat_id.id,
-                "nfe40_dup": [(6, 0, duplicatas.ids)],
-            }
-        )
-        self.update(
-            {
-                "nfe40_cobr": cobr_id.id,
-            }
-        )
+        if inv.financial_move_line_ids:
+            fat_id = self.env["nfe.40.fat"].create(
+                {
+                    "nfe40_nFat": inv.name,
+                    "nfe40_vOrig": float(inv.amount_financial_total_gross),
+                    "nfe40_vDesc": float(inv.amount_financial_discount_value),
+                    "nfe40_vLiq": float(inv.amount_financial_total),
+                }
+            )
+            duplicatas = self.env["nfe.40.dup"]
+            count = 1
+            for mov in inv.financial_move_line_ids:
+                if mov.debit > 0 and mov.account_id.user_type_id.type in ['receivable', 'payable']:
+                    duplicatas += duplicatas.create(
+                        {
+                            "nfe40_nDup": str(count).zfill(3),
+                            "nfe40_dVenc": mov.date_maturity,
+                            "nfe40_vDup": mov.debit,
+                        }
+                    )
+                    count += 1
+            cobr_id = self.env["nfe.40.cobr"].create(
+                {
+                    "nfe40_fat": fat_id.id,
+                    "nfe40_dup": [(6, 0, duplicatas.ids)],
+                }
+            )
+            self.update(
+                {
+                    "nfe40_cobr": cobr_id.id,
+                }
+            )
 
     def _valida_xml(self, xml_file):
         self.ensure_one()
@@ -825,17 +863,60 @@ class NFe(spec_models.StackedModel):
                     record.atualiza_status_nfe(
                         processo.protocolo.infProt, processo.processo_xml.decode("utf-8")
                     )
-                    if processo.protocolo.infProt.cStat in AUTORIZADO:
-                        try:
-                            record.make_pdf()
-                        except Exception as e:
+
+                    ###################################
+                    # if processo.protocolo.infProt.cStat in AUTORIZADO:
+                    #     try:
+                    #         record.make_pdf()
+                    #     except Exception as e:
                             # Não devemos interromper o fluxo
                             # E dar rollback em um documento
                             # autorizado, podendo perder dados.
 
                             # Se der problema que apareça quando
                             # o usuário clicar no gera PDF novamente.
-                            _logger.error("DANFE Error \n {}".format(e))
+                            #_logger.error("DANFE Error \n {}".format(e))
+
+
+                    ###################################
+
+                elif processo.resposta.protNFe.infProt.cStat in AUTORIZADO: 
+                    # Qdo a NFe ja foi enviada e deu algum erro no retorno
+                    # qdo tenta enviar novamente entra aqui.
+                    if not self.authorization_file_id:
+                        arquivo = self.send_file_id
+                        xml_string = base64.b64decode(arquivo.datas).decode()
+                        root = etree.fromstring(xml_string)
+                        ns = {None: "http://www.portalfiscal.inf.br/nfe"}
+                        new_root = etree.Element("nfeProc", nsmap=ns)
+
+                        protNFe_node = etree.Element("protNFe")
+                        infProt = etree.SubElement(protNFe_node, "infProt")
+                        etree.SubElement(infProt, "tpAmb").text = processo.resposta.protNFe.infProt.tpAmb
+                        etree.SubElement(infProt, "verAplic").text = processo.resposta.protNFe.infProt.verAplic
+                        etree.SubElement(infProt, "dhRecbto").text = fields.Datetime.to_string(
+                            processo.resposta.protNFe.infProt.dhRecbto)
+                        etree.SubElement(infProt, "nProt").text = processo.resposta.protNFe.infProt.nProt
+                        etree.SubElement(infProt, "digVal").text = str(processo.resposta.protNFe.infProt.digVal)
+                        etree.SubElement(infProt, "cStat").text = processo.resposta.protNFe.infProt.cStat
+                        etree.SubElement(infProt, "xMotivo").text = processo.resposta.protNFe.infProt.xMotivo
+
+                        new_root.append(root)
+                        new_root.append(protNFe_node)
+                        file = etree.tostring(new_root)
+
+                        record.atualiza_status_nfe(
+                            processo.resposta.protNFe.infProt, file.decode("utf-8")
+                        )
+                    try:
+                        record.make_pdf()
+                    except Exception as e:
+                        # Não devemos interromper o fluxo
+                        # E dar rollback em um documento
+                        # autorizado, podendo perder dados.
+                        # Se der problema que apareça quando
+                        # o usuário clicar no gera PDF novamente.
+                       _logger.error("DANFE Error \n {}".format(e))
                 else:
                     # Entra aqui qdo a nota ja foi enviada
                     # TODO : na verdade era pra dar erro de Duplicidade
@@ -853,12 +934,6 @@ class NFe(spec_models.StackedModel):
                     }
                 )
         return
-
-    def _document_date(self):
-        super()._document_date()
-        for record in self.filtered(filter_processador_edoc_nfe):
-            if not record.date_in_out:
-                record.date_in_out = fields.Datetime.now()
 
     def view_pdf(self):
         # TODO  ver se teve evendo de Cancelamento ou Carta de correção
@@ -1054,6 +1129,9 @@ class NFe(spec_models.StackedModel):
 
         sequence = str(int(max(numeros)) + 1) if numeros else "1"
 
+        if not justificative:
+            raise UserError(_("Justificativa é obrigatória!"))
+            
         evento = processador.carta_correcao(
             chave=self.document_key,
             sequencia=sequence,

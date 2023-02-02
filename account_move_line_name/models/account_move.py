@@ -13,7 +13,8 @@ class AccountMove(models.Model):
         if self.document_number:
             for line in self.line_ids:
                 if line.account_id.user_type_id.type in ('receivable', 'payable'):
-                    if self.document_number not in line.name:
+                    if ((not line.name) or (
+                        line.name and self.document_number not in line.name)):
                         recompute_payment_terms = True
         if recompute_payment_terms:
             self._recompute_payment_terms_lines()

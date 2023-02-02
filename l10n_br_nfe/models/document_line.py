@@ -136,6 +136,14 @@ class NFeLine(spec_models.StackedModel):
         related="icms_value",
     )
 
+    nfe40_vICMSDeson = fields.Monetary(
+        related="icms_relief_value",
+    )
+
+    nfe40_motDesICMS = fields.Char(
+        related="icms_relief_id.code",
+    )
+
     nfe40_vPIS = fields.Monetary(
         string="Valor do PIS (NFe)",
         related="pis_value",
@@ -339,7 +347,6 @@ class NFeLine(spec_models.StackedModel):
 
     @api.model
     def _prepare_import_dict(self, values, model=None):
-        import pudb;pu.db
         values = super()._prepare_import_dict(values, model)
         if not values.get("name"):
             values["name"] = values.get("nfe40_xProd")
@@ -372,9 +379,6 @@ class NFeLine(spec_models.StackedModel):
             "vBCSTRet": str("%.02f" % self.icmsst_wh_base),
             "pST": str("%.04f" % (self.icmsst_wh_percent + self.icmsfcp_wh_percent)),
             "vICMSSTRet": str("%.02f" % self.icmsst_wh_value),
-            "vBCFCPSTRet": str("%.02f" % self.icmsfcp_base_wh),
-            "pFCPSTRet": str("%.04f" % self.icmsfcp_wh_percent),
-            "vFCPSTRet": str("%.02f" % self.icmsfcp_value_wh),
             "pRedBCEfet": str("%.04f" % self.icms_effective_reduction),
             "vBCEfet": str("%.02f" % self.icms_effective_base),
             "pICMSEfet": str("%.04f" % self.icms_effective_percent),
@@ -384,10 +388,20 @@ class NFeLine(spec_models.StackedModel):
             "pCredSN": str("%.04f" % self.icmssn_percent),
             "vCredICMSSN": str("%.02f" % self.icmssn_credit_value),
         }
+        if self.icms_relief_id.code:
+            icms.update({
+                "motDesICMS": self.icms_relief_id.code,
+                "vICMSDeson": str("%.02f" % self.icms_relief_value),
+            })
         if self.icmsfcp_percent:
             icms.update(
                 {
                     # FUNDO DE COMBATE À POBREZA
+                    # inclui as 3 linhas abaixo pois dava erro 881
+                    # Percentual FCP ST = 0
+                    "vBCFCPSTRet": str("%.02f" % self.icmsfcp_base_wh),
+                    "pFCPSTRet": str("%.04f" % self.icmsfcp_wh_percent),
+                    "vFCPSTRet": str("%.02f" % self.icmsfcp_value_wh),
                     "vBCFCPST": str("%.02f" % self.icmsfcp_base),
                     "pFCPST": str("%.04f" % self.icmsfcp_percent),
                     "vFCPST": str("%.02f" % self.icmsfcpst_value),
@@ -399,16 +413,15 @@ class NFeLine(spec_models.StackedModel):
         if class_obj._name == "nfe.40.imposto":
             xsd_fields = [i for i in xsd_fields]
             if self.nfe40_choice10 == "nfe40_ICMS":
-                # import pudb;pu.db
                 xsd_fields.remove("nfe40_ISSQN")
-                # xsd_fields.append("nfe40_II")
+                if self.cfop_id.destination != '3':
+                    xsd_fields.remove("nfe40_II")
             else:
                 xsd_fields.remove("nfe40_ICMS")
                 xsd_fields.remove("nfe40_II")
         elif class_obj._name == "nfe.40.icms":
             # adicionei este if pra conseguir CONFIRMAR a fatura
             if self.nfe40_choice11:
-                # import pudb;pu.db
                 xsd_fields = [self.nfe40_choice11]
                 icms_tag = self.nfe40_choice11.replace("nfe40_", "")  # FIXME
                 binding_module = sys.modules[self._binding_module]
@@ -429,8 +442,9 @@ class NFeLine(spec_models.StackedModel):
             self.nfe40_vBCFCPUFDest = str("%.02f" % self.icmsfcp_base)
             self.nfe40_pFCPUFDest = str("%.04f" % self.icmsfcp_percent)
             self.nfe40_pICMSUFDest = str("%.04f" % self.icms_destination_percent)
+            icmsinter = self.icms_origin_percent or self.icms_percent
             self.nfe40_pICMSInter = str(
-                "%.02f" % self.icms_origin_percent or self.icms_percent
+                "%.02f" % icmsinter
             )
             self.nfe40_pICMSInterPart = str(
                 "%.04f" % self.icms_sharing_percent or 100.0
@@ -448,12 +462,10 @@ class NFeLine(spec_models.StackedModel):
         elif class_obj._name == "nfe.40.pis":
             xsd_fields = [self.nfe40_choice12]
         elif class_obj._name == "nfe.40.cofins":
-            # import pudb;pu.db
             # self._export_many2one("nfe40_II", False, "nfe.40.imposto", True)
             # self._export_fields_ii(export_dict)
             xsd_fields = [self.nfe40_choice15]
         elif class_obj._name == "nfe.40.ipitrib":
-            import pudb;pu.db
             xsd_fields = [i for i in xsd_fields]
             if self.nfe40_choice20 == "nfe40_pIPI":
                 xsd_fields.remove("nfe40_qUnid")
@@ -462,7 +474,6 @@ class NFeLine(spec_models.StackedModel):
                 xsd_fields.remove("nfe40_vBC")
                 xsd_fields.remove("nfe40_pIPI")
         # elif class_obj._name == "nfe.40.ii":
-        #     import pudb;pu.db
         #     self.nfe40_vII = str("%.02f" % 0.00)
         #     self.nfe40_vDespAdu = str("%.02f" % self.ii_customhouse_charges)
         elif class_obj._name == "nfe.40.pisoutr":
@@ -483,8 +494,9 @@ class NFeLine(spec_models.StackedModel):
                 xsd_fields.remove("nfe40_pCOFINS")
         # elif class_obj._name == "nfe.40.ii":
         #     xsd_fields = [i for i in xsd_fields]
-        #     import pudb;pu.db
         self.nfe40_NCM = self.ncm_id.code_unmasked or False
+        if self.ncm_id.exception:
+            self.nfe40_EXTIPI = self.ncm_id.exception.zfill(2)
         self.nfe40_CEST = self.cest_id and self.cest_id.code_unmasked or False
         self.nfe40_qCom = self.quantity
         self.nfe40_qTrib = self.fiscal_quantity
@@ -553,17 +565,14 @@ class NFeLine(spec_models.StackedModel):
         elif xsd_field == "nfe40_vBC":
             field_name = "nfe40_vBC"
             if class_obj._name.startswith("nfe.40.icms"):
-                import pudb;pu.db
                 field_name = "icms_base"
             elif class_obj._name.startswith("nfe.40.ipi"):
-                import pudb;pu.db
                 field_name = "ipi_base"
             elif class_obj._name.startswith("nfe.40.pis"):
                 field_name = "pis_base"
             elif class_obj._name.startswith("nfe.40.cofins"):
                 field_name = "cofins_base"
             # elif class_obj._name.startswith("nfe.40.ii"):
-            #     # import pudb;pu.db
             #     field_name = "ii_base"
 
             return self._export_float_monetary(
@@ -587,7 +596,6 @@ class NFeLine(spec_models.StackedModel):
 
     def _export_many2one(self, field_name, xsd_required, class_obj=None):
         self.ensure_one()
-        # import pudb;pu.db
         if field_name in self._stacking_points.keys():
             if field_name == "nfe40_ISSQN" and not self.service_type_id:
                 return False
@@ -602,7 +610,6 @@ class NFeLine(spec_models.StackedModel):
                 return False
             # TODO add condition
             elif field_name in ["nfe40_PISST", "nfe40_COFINSST"]:
-                # import pudb;pu.db
                 # elif field_name in ["nfe40_II", "nfe40_PISST", "nfe40_COFINSST"]:
                 # if field_name == "nfe40_II":
                 #     binding_module = sys.modules[self._binding_module]
@@ -659,7 +666,6 @@ class NFeLine(spec_models.StackedModel):
             vals["nfe40_choice11"] = key
 
         if key.startswith("nfe40_IPI") and key != "nfe40_IPI":
-            import pudb;pu.db
             vals["nfe40_choice3"] = key
 
         # if key.startswith("nfe40_II") and key not in ["nfe40_II"]:
@@ -752,7 +758,6 @@ class NFeLine(spec_models.StackedModel):
             # elif node.original_tagname_.startswith("II"):
             #     vals["ii_base"] = value
         # elif key == "nfe40_II":
-        #     import pudb;pu.db
         #     vals["vBC"] = 0.00
         #     vals["vDespAdu"] = 0.00
         #     vals["vII"] = 0.00
@@ -780,6 +785,40 @@ class NFeLine(spec_models.StackedModel):
         if key == "nfe40_ISSQN":
             pass
             # TODO ISSQN Fields
+    
+        elif key == "nfe20_ICMS":
+            # TODO extract method
+            icms_vals = {}
+            for tag in ICMS_TAGS:
+                if getattr(value, tag) is not None:
+                    icms = getattr(value, tag)
+
+                    # ICMSxx fields
+                    # TODO map icms_tax_id
+                    if hasattr(icms, "CST") and icms.CST is not None:
+                        icms_vals["icms_cst_id"] = self.env.ref(
+                            "l10n_br_fiscal.cst_icms_%s" % (icms.CST,)
+                        ).id
+                        # TODO search + log if not found
+                    if hasattr(icms, "modBC"):
+                        icms_vals["icms_base_type"] = float(icms.modBC)
+                    if hasattr(icms, "orig"):
+                        icms_vals["icms_origin"] = icms.orig
+                    if hasattr(icms, "vBC"):
+                        icms_vals["icms_base"] = float(icms.vBC)
+                    if hasattr(icms, "pICMS"):
+                        icms_vals["icms_percent"] = float(icms.pICMS)
+                    if hasattr(icms, "vICMS"):
+                        icms_vals["icms_value"] = float(icms.vICMS)
+                    if hasattr(icms, "pRedBC"):
+                        icms_vals["icms_reduction"] = float(icms.pRedBC)
+                    if hasattr(icms, "motDesICMS") and icms.motDesICMS is not None:
+                        icms_vals["icms_relief_id"] = self.env.ref(
+                            "l10n_br_fiscal.icms_relief_%s" % (icms.motDesICMS,)
+                        ).id
+                    if hasattr(icms, "vICMSDeson") and icms.vICMSDeson is not None:
+                        icms_vals["icms_relief_value"] = float(icms.vICMSDeson)
+            new_value.update(icms_vals)
         elif key == "nfe40_ICMS":
             # TODO extract method
             icms_vals = {}
@@ -901,7 +940,6 @@ class NFeLine(spec_models.StackedModel):
 
             # TODO
         # elif key == "nfe40_II":
-        #     import pudb;pu.db
         #     ii_value = {}
         #     ii_value["vBC"] = 0.00
         #     ii_value["vDespAdu"] = 0.00
